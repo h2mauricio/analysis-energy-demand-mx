@@ -1,0 +1,860 @@
+state_id,munic_id,agem,state,region.tariff,region.tariff.f,tariff,munic,summer
+1,1,1001,Aguascalientes,Sur,8,1,aguascalientes,0
+1,2,1002,Aguascalientes,Sur,8,1,asientos,0
+1,3,1003,Aguascalientes,Sur,8,1,calvillo,0
+1,4,1004,Aguascalientes,Sur,8,1,cosio,0
+1,5,1005,Aguascalientes,Sur,8,1,jesus maria,0
+1,6,1006,Aguascalientes,Sur,8,1,pabellon de arteaga,0
+1,7,1007,Aguascalientes,Sur,8,1,rincon de romos,0
+1,9,1009,Aguascalientes,Sur,8,1,tepezala,0
+1,9,1008,Aguascalientes,Sur,8,1,san jose de gracia,0
+1,10,1010,Aguascalientes,Sur,8,1,el llano,0
+1,11,1011,Aguascalientes,Sur,8,1,San Francisco de los Romo,0
+2,1,2001,Baja California,Baja California,1,1,ensenada,0
+2,2,2002,Baja California,Baja California,1,1F,mexicali,1
+2,3,2003,Baja California,Baja California,1,1A,tecate,1
+2,4,2004,Baja California,Baja California,1,1,tijuana,0
+2,5,2005,Baja California,Baja California,1,1,playas de rosarito,0
+3,1,3001,Baja California Sur,Baja California Sur,2,1C,comondu,1
+3,2,3002,Baja California Sur,Baja California Sur,2,1D,mulege,1
+3,3,3003,Baja California Sur,Baja California Sur,2,1D,la paz,1
+3,8,3008,Baja California Sur,Baja California Sur,2,1C,los cabos,1
+3,9,3009,Baja California Sur,Baja California Sur,2,1E,loreto,1
+4,1,4001,Campeche,Peninsular,7,1C,calkini,1
+4,2,4002,Campeche,Peninsular,7,1C,campeche,1
+4,3,4003,Campeche,Peninsular,7,1C,carmen,1
+4,4,4004,Campeche,Peninsular,7,1C,champoton,1
+4,5,4005,Campeche,Peninsular,7,1C,hecelchakan,1
+4,6,4006,Campeche,Peninsular,7,1C,hopelchen,1
+4,8,4008,Campeche,Peninsular,7,1C,tenabo,1
+4,9,4009,Campeche,Peninsular,7,1C,escarcega,1
+4,10,4010,Campeche,Peninsular,7,1C,calakmul,1
+4,11,4011,Campeche,Peninsular,7,1C,candelaria,1
+5,2,5002,Coahuila de Zaragoza,Noreste,4,1E,acuna,1
+5,6,5006,Coahuila de Zaragoza,Peninsular,7,1C,Castaños,1
+5,7,5007,Coahuila de Zaragoza,Noreste,4,1B,cuatro cienegas,1
+5,9,5009,Coahuila de Zaragoza,Norte,6,1C,francisco i. madero,1
+5,10,5010,Coahuila de Zaragoza,Noreste,4,1D,frontera,1
+5,13,5013,Coahuila de Zaragoza,Noreste,4,1E,hidalgo,1
+5,14,5014,Coahuila de Zaragoza,Noreste,4,1E,jimenez,1
+5,17,5017,Coahuila de Zaragoza,Norte,6,1C,matamoros,1
+5,18,5018,Coahuila de Zaragoza,Noreste,4,1D,monclova,1
+5,20,5020,Coahuila de Zaragoza,Noreste,4,1C,muzquiz,1
+5,22,5022,Coahuila de Zaragoza,Noreste,4,1E,nava,1
+5,23,5023,Coahuila de Zaragoza,Norte,6,1B,ocampo,1
+5,24,5024,Coahuila de Zaragoza,Norte,6,1A,parras,1
+5,25,5025,Coahuila de Zaragoza,Noreste,4,1E,piedras negras,1
+5,27,5027,Coahuila de Zaragoza,Noreste,4,1,ramos arizpe,0
+5,28,5028,Coahuila de Zaragoza,Noreste,4,1E,sabinas,1
+5,30,5030,Coahuila de Zaragoza,Noreste,4,1,saltillo,0
+5,32,5032,Coahuila de Zaragoza,Noreste,4,1E,san juan de sabinas,1
+5,35,5035,Coahuila de Zaragoza,Norte,6,1C,torreon,1
+5,36,5036,Coahuila de Zaragoza,Norte,6,1D,viesca,1
+5,37,5037,Coahuila de Zaragoza,Noreste,4,1C,villa union,1
+6,1,6001,Colima,Sur,8,1B,armeria,1
+6,2,6002,Colima,Sur,8,1B,colima,1
+6,3,6003,Colima,Sur,8,1A,comala,1
+6,4,6004,Colima,Sur,8,1B,coquimatlan,1
+6,6,6006,Colima,Sur,8,1B,ixtlahuacan,1
+6,7,6007,Colima,Sur,8,1B,manzanillo,1
+6,9,6009,Colima,Sur,8,1B,tecoman,1
+6,10,6010,Colima,Sur,8,1B,villa de alvarez,1
+7,1,7001,Chiapas,Sur,8,1B,acacoyagua,1
+7,2,7002,Chiapas,Sur,8,1B,acala,1
+7,6,7006,Chiapas,Sur,8,1,amatenango de la frontera,0
+7,9,7009,Chiapas,Sur,8,1C,arriaga,1
+7,12,7012,Chiapas,Sur,8,1,berriozabal,0
+7,14,7014,Chiapas,Sur,8,1,el bosque,0
+7,17,7017,Chiapas,Sur,8,1A,cintalapa,1
+7,19,7019,Chiapas,Sur,8,1,comitan de dominguez,0
+7,20,7020,Chiapas,Sur,8,1A,la concordia,1
+7,21,7021,Chiapas,Sur,8,1B,copainala,1
+7,22,7022,Chiapas,Sur,8,1,chalchihuitan,0
+7,23,7023,Chiapas,Sur,8,1,chamula,0
+7,26,7026,Chiapas,Sur,8,1,chenalho,0
+7,27,7027,Chiapas,Sur,8,1A,chiapa de corzo,1
+7,30,7030,Chiapas,Sur,8,1A,chicomuselo,1
+7,40,7040,Chiapas,Sur,8,1C,huixtla,1
+7,41,7041,Chiapas,Sur,8,1,la independencia,0
+7,46,7046,Chiapas,Sur,8,1A,jiquipilas,1
+7,47,7047,Chiapas,Sur,8,1,jitotol,0
+7,52,7052,Chiapas,Sur,8,1,las margaritas,0
+7,56,7056,Chiapas,Sur,8,1,mitontic,0
+7,57,7057,Chiapas,Sur,8,1,motozintla,0
+7,59,7059,Chiapas,Sur,8,1C,ocosingo,1
+7,61,7061,Chiapas,Sur,8,1,ocozocoautla de espinosa,0
+7,63,7063,Chiapas,Sur,8,1B,osumacinta,1
+7,65,7065,Chiapas,Sur,8,1B,palenque,1
+7,66,7066,Chiapas,Sur,8,1,pantelho,0
+7,68,7068,Chiapas,Sur,8,1B,pichucalco,1
+7,73,7073,Chiapas,Sur,8,1B,rayon,1
+7,75,7075,Chiapas,Sur,8,1,las rosas,0
+7,78,7078,Chiapas,Sur,8,1,san cristobal de las casas,0
+7,82,7082,Chiapas,Sur,8,1,sitala,0
+7,83,7083,Chiapas,Sur,8,1A,socoltenango,1
+7,85,7085,Chiapas,Sur,8,1,soyalo,0
+7,86,7086,Chiapas,Sur,8,1B,suchiapa,1
+7,87,7087,Chiapas,Sur,8,1C,suchiate,1
+7,89,7089,Chiapas,Sur,8,1A,tapachula,1
+7,93,7093,Chiapas,Sur,8,1,tenejapa,0
+7,94,7094,Chiapas,Sur,8,1,teopisca,0
+7,97,7097,Chiapas,Sur,8,1C,tonala,1
+7,99,7099,Chiapas,Sur,8,1,la trinitaria,0
+7,100,7100,Chiapas,Sur,8,1A,tumbala,1
+7,101,7101,Chiapas,Sur,8,1B,tuxtla gutierrez,1
+7,106,7106,Chiapas,Sur,8,1A,venustiano carranza,1
+7,107,7107,Chiapas,Sur,8,1A,villa corzo,1
+7,108,7108,Chiapas,Sur,8,1A,villaflores,1
+7,111,7111,Chiapas,Sur,8,1,zinacantan,0
+7,112,7112,Chiapas,Sur,8,1,san juan cancuc,0
+7,114,7114,Chiapas,Sur,8,1B,benemerito de las americas,1
+7,119,7119,Chiapas,Sur,8,1,santiago el pinar,0
+8,3,8003,Chihuahua,Norte,6,1A,allende,1
+8,7,8007,Chihuahua,Norte,6,1,balleza,0
+8,9,8009,Chihuahua,Norte,6,1,bocoyna,0
+8,11,8011,Chihuahua,Norte,6,1B,camargo,1
+8,12,8012,Chihuahua,Norte,6,1,carichi,0
+8,17,8017,Chihuahua,Norte,6,1,cuauhtemoc,0
+8,19,8019,Chihuahua,Norte,6,1B,chihuahua,1
+8,21,8021,Chihuahua,Norte,6,1B,delicias,1
+8,27,8027,Chihuahua,Norte,6,1,guachochi,0
+8,29,8029,Chihuahua,Norte,6,1,guadalupe y calvo,0
+8,30,8030,Chihuahua,Norte,6,1C,guazapares,1
+8,32,8032,Chihuahua,Norte,6,1A,hidalgo del parral,1
+8,36,8036,Chihuahua,Norte,6,1A,jimenez,1
+8,37,8037,Chihuahua,Norte,6,1C,juarez,1
+8,43,8043,Chihuahua,Norte,6,1,matachi,0
+8,48,8048,Chihuahua,Norte,6,1A,namiquipa,1
+8,50,8050,Chihuahua,Norte,6,1A,nuevo casas grandes,1
+8,57,8057,Chihuahua,Norte,6,1A,san francisco de borja,1
+8,60,8060,Chihuahua,Norte,6,1,santa barbara,0
+8,62,8062,Chihuahua,Norte,6,1B,saucillo,1
+8,65,8065,Chihuahua,Norte,6,1C,urique,1
+8,66,8066,Chihuahua,Norte,6,1C,uruachi,1
+9,2,9002,Distrito Federal,Central,3,1,azcapotzalco,0
+9,3,9003,Distrito Federal,Central,3,1,coyoacan,0
+9,4,9004,Distrito Federal,Central,3,1,cuajimalpa de morelos,0
+9,5,9005,Distrito Federal,Central,3,1,gustavo a. madero,0
+9,6,9006,Distrito Federal,Central,3,1,iztacalco,0
+9,7,9007,Distrito Federal,Central,3,1,iztapalapa,0
+9,8,9008,Distrito Federal,Central,3,1,la magdalena contreras,0
+9,9,9009,Distrito Federal,Central,3,1,milpa alta,0
+9,10,9010,Distrito Federal,Central,3,1,alvaro obregon,0
+9,11,9011,Distrito Federal,Central,3,1,tlahuac,0
+9,12,9012,Distrito Federal,Central,3,1,tlalpan,0
+9,13,9013,Distrito Federal,Central,3,1,xochimilco,0
+9,14,9014,Distrito Federal,Central,3,1,benito juarez,0
+9,15,9015,Distrito Federal,Central,3,1,cuauhtemoc,0
+9,16,9016,Distrito Federal,Central,3,1,miguel hidalgo,0
+9,17,9017,Distrito Federal,Central,3,1,venustiano carranza,0
+10,1,10001,Durango,Norte,6,1,canatlan,0
+10,4,10004,Durango,Norte,6,1B,cuencame,1
+10,5,10005,Durango,Norte,6,1,durango,0
+10,6,10006,Durango,Norte,6,1B,general simon bolivar,1
+10,7,10007,Durango,Norte,6,1C,gomez palacio,1
+10,9,10009,Durango,Norte,6,1,guanacevi,0
+10,12,10012,Durango,Norte,6,1C,lerdo,1
+10,13,10013,Durango,Norte,6,1C,mapimi,1
+10,15,10015,Durango,Norte,6,1B,nazas,1
+10,22,10022,Durango,Norte,6,1,poanas,0
+10,23,10023,Durango,Norte,6,1,pueblo nuevo,0
+10,27,10027,Durango,Norte,6,1,san juan de guadalupe,0
+10,28,10028,Durango,Norte,6,1A,san juan del rio,1
+10,31,10031,Durango,Norte,6,1,santa clara,0
+10,32,10032,Durango,Norte,6,1,santiago papasquiaro,0
+10,33,10033,Durango,Norte,6,1,suchil,0
+10,36,10036,Durango,Norte,6,1B,tlahualilo,1
+10,38,10038,Durango,Norte,6,1,vicente guerrero,0
+10,39,10039,Durango,Norte,6,1,nuevo ideal,0
+11,1,11001,Guanajuato,Sur,8,1,abasolo,0
+11,2,11002,Guanajuato,Sur,8,1,acambaro,0
+11,3,11003,Guanajuato,Sur,8,1,san miguel de allende,0
+11,5,11005,Guanajuato,Sur,8,1,apaseo el grande,0
+11,7,11007,Guanajuato,Sur,8,1,celaya,0
+11,8,11008,Guanajuato,Sur,8,1,manuel doblado,0
+11,9,11009,Guanajuato,Sur,8,1,comonfort,0
+11,11,11011,Guanajuato,Sur,8,1,cortazar,0
+11,12,11012,Guanajuato,Sur,8,1,cueramaro,0
+11,14,11014,Guanajuato,Sur,8,1,dolores hidalgo cuna de la independencia nacional,0
+11,15,11015,Guanajuato,Sur,8,1,guanajuato,0
+11,17,11017,Guanajuato,Sur,8,1,irapuato,0
+11,20,11020,Guanajuato,Sur,8,1,leon,0
+11,21,11021,Guanajuato,Sur,8,1,moroleon,0
+11,23,11023,Guanajuato,Sur,8,1,penjamo,0
+11,25,11025,Guanajuato,Sur,8,1,purisima del rincon,0
+11,26,11026,Guanajuato,Sur,8,1,romita,0
+11,27,11027,Guanajuato,Sur,8,1,salamanca,0
+11,28,11028,Guanajuato,Sur,8,1,salvatierra,0
+11,30,11030,Guanajuato,Sur,8,1,san felipe,0
+11,31,11031,Guanajuato,Sur,8,1,san francisco del rincon,0
+11,33,11033,Guanajuato,Sur,8,1,san luis de la paz,0
+11,35,11035,Guanajuato,Sur,8,1,santa cruz de juventino rosas,0
+11,37,11037,Guanajuato,Sur,8,1,silao de la victoria,0
+11,39,11039,Guanajuato,Sur,8,1,tarimoro,0
+11,41,11041,Guanajuato,Sur,8,1,uriangato,0
+11,42,11042,Guanajuato,Sur,8,1,valle de santiago,0
+11,44,11044,Guanajuato,Sur,8,1,villagran,0
+11,45,11045,Guanajuato,Sur,8,1,xichu,0
+11,46,11046,Guanajuato,Sur,8,1,yuriria,0
+12,1,12001,Guerrero,Sur,8,1B,acapulco de juarez,1
+12,2,12002,Guerrero,Sur,8,1,ahuacuotzingo,0
+12,3,12003,Guerrero,Sur,8,1E,ajuchitlan del progreso,1
+12,10,12010,Guerrero,Sur,8,1,atlixtac,0
+12,11,12011,Guerrero,Sur,8,1B,atoyac de alvarez,1
+12,12,12012,Guerrero,Sur,8,1C,ayutla de los libres,1
+12,20,12020,Guerrero,Sur,8,1B,copanatoyac,1
+12,21,12021,Guerrero,Sur,8,1B,coyuca de benitez,1
+12,25,12025,Guerrero,Sur,8,1B,cuautepec,1
+12,27,12027,Guerrero,Sur,8,1E,cutzamala de pinzon,1
+12,28,12028,Guerrero,Sur,8,1,chilapa de alvarez,0
+12,29,12029,Guerrero,Sur,8,1,chilpancingo de los bravo,0
+12,30,12030,Guerrero,Sur,8,1B,florencio villarreal,0
+12,35,12035,Guerrero,Sur,8,1C,iguala de la independencia,1
+12,38,12038,Guerrero,Sur,8,1A,zihuatanejo de azueta,1
+12,39,12039,Guerrero,Sur,8,1C,juan r. escudero,1
+12,41,12041,Guerrero,Sur,8,1B,malinaltepec,1
+12,42,12042,Guerrero,Sur,8,1,martir de cuilapan,0
+12,44,12044,Guerrero,Sur,8,1A,mochitlan,1
+12,46,12046,Guerrero,Sur,8,1B,ometepec,1
+12,50,12050,Guerrero,Sur,8,1F,pungarabato,1
+12,51,12051,Guerrero,Sur,8,1A,quechultenango,1
+12,52,12052,Guerrero,Sur,8,1B,san luis acatlan,1
+12,53,12053,Guerrero,Sur,8,1B,san marcos,1
+12,54,12054,Guerrero,Sur,8,1D,san miguel totolapan,0
+12,55,12055,Guerrero,Sur,8,1,taxco de alarcon,0
+12,57,12057,Guerrero,Sur,8,1B,tecpan de galeana,1
+12,58,12058,Guerrero,Sur,8,1,teloloapan,0
+12,62,12062,Guerrero,Sur,8,1B,tlacoachistlahuaca,1
+12,66,12066,Guerrero,Sur,8,1B,tlapa de comonfort,1
+12,69,12069,Guerrero,Sur,8,1B,xalpatlahuac,1
+12,72,12072,Guerrero,Sur,8,1B,zapotitlan tablas,0
+12,73,12073,Guerrero,Sur,8,1D,zirandaro,1
+12,77,12077,Guerrero,Sur,8,1B,marquelia,1
+12,79,12079,Guerrero,Sur,8,1,jose joaquin de herrera,0
+13,3,13003,Hidalgo,Sur,8,1,actopan,0
+13,7,13007,Hidalgo,Sur,8,1,almoloya,0
+13,11,13011,Hidalgo,Sur,8,1B,atlapexco,1
+13,13,13013,Hidalgo,Sur,8,1,atotonilco de tula,0
+13,21,13021,Hidalgo,Sur,8,1,emiliano zapata,0
+13,23,13023,Hidalgo,Sur,8,1,francisco i. madero,0
+13,27,13027,Hidalgo,Sur,8,1,huehuetla,0
+13,28,13028,Hidalgo,Sur,8,1B,huejutla de reyes,1
+13,30,13030,Hidalgo,Sur,8,1,ixmiquilpan,0
+13,33,13033,Hidalgo,Sur,8,1,juarez hidalgo,0
+13,34,13034,Hidalgo,Sur,8,1B,lolotla,1
+13,40,13040,Hidalgo,Sur,8,1,la mision,0
+13,44,13044,Hidalgo,Sur,8,1,nopala de villagran,0
+13,45,13045,Hidalgo,Sur,8,1,omitlan de juarez,0
+13,46,13046,Hidalgo,Sur,8,1B,san felipe orizatlan,1
+13,48,13048,Hidalgo,Sur,8,1,pachuca de soto,0
+13,50,13050,Hidalgo,Sur,8,1,progreso de obregon,0
+13,51,13051,Hidalgo,Sur,8,1,mineral de la reforma,0
+13,52,13052,Hidalgo,Sur,8,1,san agustin tlaxiaca,0
+13,53,13053,Hidalgo,Sur,8,1,san bartolo tutotepec,0
+13,59,13059,Hidalgo,Sur,8,1,tecozautla,0
+13,63,13063,Hidalgo,Sur,8,1,tepeji del rio de ocampo,0
+13,67,13067,Hidalgo,Sur,8,1,tezontepec de aldama,0
+13,69,13069,Hidalgo,Sur,8,1,tizayuca,0
+13,73,13073,Hidalgo,Sur,8,1B,tlanchinol,1
+13,76,13076,Hidalgo,Sur,8,1,tula de allende,0
+13,77,13077,Hidalgo,Sur,8,1,tulancingo de bravo,0
+13,80,13080,Hidalgo,Sur,8,1B,yahualica,1
+13,81,13081,Hidalgo,Sur,8,1,zacualtipan de angeles,0
+13,82,13082,Hidalgo,Sur,8,1,zapotlan de juarez,0
+13,83,13083,Hidalgo,Sur,8,1,zempoala,0
+13,84,13084,Hidalgo,Sur,8,1,zimapan,0
+14,13,14013,Jalisco,Sur,8,1,atotonilco el alto,0
+14,15,14015,Jalisco,Sur,8,1A,autlan de navarro,1
+14,16,14016,Jalisco,Sur,8,1,ayotlan,0
+14,18,14018,Jalisco,Sur,8,1,la barca,0
+14,23,14023,Jalisco,Sur,8,1,zapotlan el grande,0
+14,35,14035,Jalisco,Sur,8,1,encarnacion de diaz,0
+14,39,14039,Jalisco,Sur,8,1,guadalajara,0
+14,43,14043,Jalisco,Sur,8,1A,la huerta,1
+14,50,14050,Jalisco,Sur,8,1,jocotepec,0
+14,51,14051,Jalisco,Sur,8,1,juanacatlan,0
+14,53,14053,Jalisco,Sur,8,1,lagos de moreno,0
+14,63,14063,Jalisco,Sur,8,1,ocotlan,0
+14,64,14064,Jalisco,Sur,8,1,ojuelos de jalisco,0
+14,67,14067,Jalisco,Sur,8,1B,puerto vallarta,1
+14,70,14070,Jalisco,Sur,8,1,el salto,0
+14,77,14077,Jalisco,Sur,8,1,san martin hidalgo,0
+14,78,14078,Jalisco,Sur,8,1,san miguel el alto,0
+14,83,14083,Jalisco,Sur,8,1,tala,0
+14,85,14085,Jalisco,Sur,8,1,tamazula de gordiano,0
+14,88,14088,Jalisco,Sur,8,1A,tecolotlan,1
+14,90,14090,Jalisco,Sur,8,1A,tenamaxtlan,1
+14,91,14091,Jalisco,Sur,8,1,teocaltiche,0
+14,93,14093,Jalisco,Sur,8,1,tepatitlan de morelos,0
+14,94,14094,Jalisco,Sur,8,1A,tequila,1
+14,97,14097,Jalisco,Sur,8,1,tlajomulco de zu?iga,0
+14,98,14098,Jalisco,Sur,8,1,san pedro tlaquepaque,0
+14,100,14100,Jalisco,Sur,8,1B,tomatlan,1
+14,101,14101,Jalisco,Sur,8,1,tonala,0
+14,113,14113,Jalisco,Sur,8,1,san gabriel,0
+14,116,14116,Jalisco,Sur,8,1,villa hidalgo,0
+14,118,14118,Jalisco,Sur,8,1,yahualica de gonzalez gallo,0
+14,120,14120,Jalisco,Sur,8,1,zapopan,0
+14,121,14121,Jalisco,Sur,8,1,zapotiltic,0
+14,124,14124,Jalisco,Sur,8,1,zapotlanejo,0
+15,2,15002,M?xico,Sur,8,1,acolman,0
+15,5,15005,M?xico,Sur,8,1,almoloya de juarez,0
+15,8,15008,M?xico,Sur,8,1,amatepec,0
+15,9,15009,M?xico,Sur,8,1,amecameca,0
+15,10,15010,M?xico,Sur,8,1,apaxco,0
+15,11,15011,M?xico,Sur,8,1,atenco,0
+15,13,15013,M?xico,Sur,8,1,atizapan de zaragoza,0
+15,14,15014,M?xico,Sur,8,1,atlacomulco,0
+15,18,15018,M?xico,Sur,8,1,calimaya,0
+15,20,15020,M?xico,Central,3,1,coacalco de berriozabal,0
+15,23,15023,M?xico,Sur,8,1,coyotepec,0
+15,24,15024,M?xico,Central,3,1,cuautitlan,0
+15,25,15025,M?xico,Central,3,1,chalco,0
+15,28,15028,M?xico,Sur,8,1,chiautla,0
+15,29,15029,M?xico,Central,3,1,chicoloapan,0
+15,30,15030,M?xico,Sur,8,1,chiconcuac,0
+15,31,15031,M?xico,Central,3,1,chimalhuacan,0
+15,33,15033,M?xico,Central,3,1,ecatepec de morelos,0
+15,35,15035,M?xico,Sur,8,1,huehuetoca,0
+15,37,15037,M?xico,Central,3,1,huixquilucan,0
+15,39,15039,M?xico,Central,3,1,ixtapaluca,0
+15,40,15040,M?xico,Sur,8,1,ixtapan de la sal,0
+15,42,15042,M?xico,Sur,8,1,ixtlahuaca,0
+15,44,15044,M?xico,Sur,8,1,jaltenco,0
+15,45,15045,M?xico,Sur,8,1,jilotepec,0
+15,46,15046,M?xico,Sur,8,1,jilotzingo,0
+15,50,15050,M?xico,Sur,8,1,juchitepec,0
+15,51,15051,M?xico,Sur,8,1,lerma,0
+15,53,15053,M?xico,Sur,8,1,melchor ocampo,0
+15,54,15054,M?xico,Sur,8,1,metepec,0
+15,56,15056,M?xico,Sur,8,1,morelos,0
+15,57,15057,M?xico,Central,3,1,naucalpan de juarez,0
+15,58,15058,M?xico,Central,3,1,nezahualcoyotl,0
+15,60,15060,M?xico,Sur,8,1,nicolas romero,0
+15,61,15061,M?xico,Sur,8,1,nopaltepec,0
+15,62,15062,M?xico,Sur,8,1,ocoyoacac,0
+15,64,15064,M?xico,Sur,8,1,el oro,0
+15,67,15067,M?xico,Sur,8,1,otzolotepec,0
+15,68,15068,M?xico,Sur,8,1,ozumba,0
+15,70,15070,M?xico,Central,3,1,la paz,0
+15,71,15071,M?xico,Sur,8,1,polotitlan,0
+15,74,15074,M?xico,Sur,8,1,san felipe del progreso,0
+15,76,15076,M?xico,Central,3,1,san mateo atenco,0
+15,80,15080,M?xico,Sur,8,1,sultepec,0
+15,81,15081,M?xico,Sur,8,1,tecamac,0
+15,82,15082,M?xico,Sur,8,1,tejupilco,0
+15,84,15084,M?xico,Sur,8,1,temascalapa,0
+15,91,15091,M?xico,Sur,8,1,teoloyucan,0
+15,94,15094,M?xico,Sur,8,1,tepetlixpa,0
+15,95,15095,M?xico,Central,3,1,tepotzotlan,0
+15,96,15096,M?xico,Sur,8,1,tequixquiac,0
+15,99,15099,M?xico,Central,3,1,texcoco,0
+15,103,15103,M?xico,Sur,8,1,tlalmanalco,0
+15,104,15104,M?xico,Central,3,1,tlalnepantla de baz,0
+15,106,15106,M?xico,Central,3,1,toluca,0
+15,108,15108,M?xico,Central,3,1,tultepec,0
+15,109,15109,M?xico,Central,3,1,tultitlan,0
+15,112,15112,M?xico,Sur,8,1,villa del carbon,0
+15,114,15114,M?xico,Sur,8,1,villa victoria,0
+15,118,15118,M?xico,Sur,8,1,zinacantepec,0
+15,119,15119,M?xico,Sur,8,1,zumpahuacan,0
+15,120,15120,M?xico,Sur,8,1,zumpango,0
+15,121,15121,M?xico,Sur,8,1,cuautitlan izcalli,0
+15,122,15122,M?xico,Sur,8,1,valle de chalco solidaridad,0
+16,6,16006,Michoac?n de Ocampo,Sur,8,1D,apatzingan,1
+16,11,16011,Michoac?n de Ocampo,Sur,8,1,brise?as,0
+16,12,16012,Michoac?n de Ocampo,Sur,8,1C,buenavista,1
+16,15,16015,Michoac?n de Ocampo,Sur,8,1A,coalcoman de vazquez pallares,1
+16,23,16023,Michoac?n de Ocampo,Sur,8,1,chavinda,0
+16,25,16025,Michoac?n de Ocampo,Sur,8,1,chilchota,0
+16,34,16034,Michoac?n de Ocampo,Sur,8,1,hidalgo,0
+16,36,16036,Michoac?n de Ocampo,Sur,8,1,huandacareo,0
+16,38,16038,Michoac?n de Ocampo,Sur,8,1C,huetamo,1
+16,41,16041,Michoac?n de Ocampo,Sur,8,1,irimbo,0
+16,43,16043,Michoac?n de Ocampo,Sur,8,1,jacona,0
+16,49,16049,Michoac?n de Ocampo,Sur,8,1,madero,0
+16,50,16050,Michoac?n de Ocampo,Sur,8,1,maravatio,0
+16,52,16052,Michoac?n de Ocampo,Sur,8,1B,lazaro cardenas,1
+16,53,16053,Michoac?n de Ocampo,Sur,8,1,morelia,0
+16,59,16059,Michoac?n de Ocampo,Sur,8,1A,nuevo urecho,1
+16,61,16061,Michoac?n de Ocampo,Sur,8,1,ocampo,0
+16,65,16065,Michoac?n de Ocampo,Sur,8,1,paracho,0
+16,66,16066,Michoac?n de Ocampo,Sur,8,1,patzcuaro,0
+16,68,16068,Michoac?n de Ocampo,Sur,8,1,periban,0
+16,69,16069,Michoac?n de Ocampo,Sur,8,1,la piedad,0
+16,71,16071,Michoac?n de Ocampo,Sur,8,1,puruandiro,0
+16,72,16072,Michoac?n de Ocampo,Sur,8,1,querendaro,0
+16,74,16074,Michoac?n de Ocampo,Sur,8,1,cojumatlan de regules,0
+16,76,16076,Michoac?n de Ocampo,Sur,8,1,sahuayo,0
+16,81,16081,Michoac?n de Ocampo,Sur,8,1,susupuato,0
+16,82,16082,Michoac?n de Ocampo,Sur,8,1,tacambaro,0
+16,84,16084,Michoac?n de Ocampo,Sur,8,1,tangamandapio,0
+16,85,16085,Michoac?n de Ocampo,Sur,8,1,tangancicuaro,0
+16,90,16090,Michoac?n de Ocampo,Sur,8,1,tingambato,0
+16,93,16093,Michoac?n de Ocampo,Sur,8,1,tlalpujahua,0
+16,95,16095,Michoac?n de Ocampo,Sur,8,1,tocumbo,0
+16,102,16102,Michoac?n de Ocampo,Sur,8,1,uruapan,0
+16,108,16108,Michoac?n de Ocampo,Sur,8,1,zamora,0
+16,111,16111,Michoac?n de Ocampo,Sur,8,1,ziracuaretiro,0
+16,112,16112,Michoac?n de Ocampo,Sur,8,1,zitacuaro,0
+17,2,17002,Morelos,Sur,8,1A,atlatlahucan,1
+17,3,17003,Morelos,Sur,8,1A,axochiapan,1
+17,4,17004,Morelos,Sur,8,1A,ayala,1
+17,5,17005,Morelos,Sur,8,1A,coatlan del rio,1
+17,6,17006,Morelos,Sur,8,1A,cuautla,1
+17,7,17007,Morelos,Central,3,1A,cuernavaca,1
+17,8,17008,Morelos,Sur,8,1A,emiliano zapata,1
+17,9,17009,Morelos,Sur,8,1A,huitzilac,1
+17,10,17010,Morelos,Sur,8,1A,jantetelco,1
+17,11,17011,Morelos,Sur,8,1A,jiutepec,1
+17,12,17012,Morelos,Sur,8,1A,jojutla,1
+17,14,17014,Morelos,Sur,8,1A,mazatepec,1
+17,15,17015,Morelos,Sur,8,1A,miacatlan,1
+17,16,17016,Morelos,Sur,8,1A,ocuituco,1
+17,17,17017,Morelos,Sur,8,1A,puente de ixtla,1
+17,18,17018,Morelos,Sur,8,1A,temixco,1
+17,19,17019,Morelos,Sur,8,1A,tepalcingo,1
+17,20,17020,Morelos,Sur,8,1A,tepoztlan,1
+17,24,17024,Morelos,Sur,8,1A,tlaltizapan de zapata,1
+17,25,17025,Morelos,Sur,8,1A,tlaquiltenango,1
+17,26,17026,Morelos,Sur,8,1A,tlayacapan,1
+17,28,17028,Morelos,Sur,8,1A,xochitepec,1
+17,29,17029,Morelos,Sur,8,1A,yautepec,1
+17,31,17031,Morelos,Sur,8,1A,zacatepec,1
+18,1,18001,Nayarit,Sur,8,1B,acaponeta,1
+18,2,18002,Nayarit,Sur,8,1A,ahuacatlan,1
+18,3,18003,Nayarit,Sur,8,1B,amatlan de ca?as,1
+18,4,18004,Nayarit,Sur,8,1A,compostela,1
+18,5,18005,Nayarit,Sur,8,1B,huajicori,1
+18,6,18006,Nayarit,Sur,8,1A,ixtlan del rio,1
+18,8,18008,Nayarit,Sur,8,1A,xalisco,1
+18,9,18009,Nayarit,Sur,8,1E,del nayar,0
+18,10,18010,Nayarit,Sur,8,1B,rosamorada,1
+18,11,18011,Nayarit,Sur,8,1B,ruiz,1
+18,12,18012,Nayarit,Sur,8,1B,san blas,1
+18,14,18014,Nayarit,Sur,8,1A,santa maria del oro,1
+18,15,18015,Nayarit,Sur,8,1B,santiago ixcuintla,1
+18,17,18017,Nayarit,Sur,8,1A,tepic,1
+18,18,18018,Nayarit,Sur,8,1B,tuxpan,1
+18,20,18020,Nayarit,Sur,8,1B,bahia de banderas,1
+19,3,19003,Nuevo Le?n,Noreste,4,1E,los aldamas,1
+19,4,19004,Nuevo Le?n,Noreste,4,1B,allende,1
+19,5,19005,Nuevo Le?n,Noreste,4,1E,anahuac,1
+19,6,19006,Nuevo Le?n,Noreste,4,1C,apodaca,1
+19,9,19009,Nuevo Le?n,Noreste,4,1C,cadereyta jimenez,1
+19,10,19010,Nuevo Le?n,Noreste,4,1C,el carmen,1
+19,12,19012,Nuevo Le?n,Noreste,4,1C,cienega de flores,1
+19,14,19014,Nuevo Le?n,Noreste,4,1,doctor arroyo,0
+19,17,19017,Nuevo Le?n,Noreste,4,1,galeana,0
+19,18,19018,Nuevo Le?n,Noreste,4,1C,garcia,1
+19,19,19019,Nuevo Le?n,Noreste,4,1C,san pedro garza garcia,1
+19,21,19021,Nuevo Le?n,Noreste,4,1C,general escobedo,1
+19,24,19024,Nuevo Le?n,Noreste,4,1,general zaragoza,0
+19,26,19026,Nuevo Le?n,Noreste,4,1C,guadalupe,1
+19,31,19031,Nuevo Le?n,Noreste,4,1C,juarez,1
+19,33,19033,Nuevo Le?n,Noreste,4,1C,linares,1
+19,38,19038,Nuevo Le?n,Noreste,4,1C,montemorelos,1
+19,39,19039,Nuevo Le?n,Noreste,4,1C,monterrey,1
+19,41,19041,Nuevo Le?n,Noreste,4,1C,pesqueria,1
+19,44,19044,Nuevo Le?n,Noreste,4,1C,sabinas hidalgo,1
+19,46,19046,Nuevo Le?n,Noreste,4,1C,san nicolas de los garza,1
+19,48,19048,Nuevo Le?n,Noreste,4,1C,santa catarina,1
+19,49,19049,Nuevo Le?n,Noreste,4,1B,santiago,1
+19,51,19051,Nuevo Le?n,Noreste,4,1B,villaldama,1
+20,1,20001,Oaxaca,Sur,8,1,abejones,0
+20,2,20002,Oaxaca,Sur,8,1B,acatlan de perez figueroa,1
+20,10,20010,Oaxaca,Sur,8,1B,el barrio de la soledad,1
+20,21,20021,Oaxaca,Sur,8,1B,cosolapa,1
+20,28,20028,Oaxaca,Sur,8,1,heroica ciudad de ejutla de crespo,0
+20,39,20039,Oaxaca,Sur,8,1,heroica ciudad de huajuapan de leon,0
+20,40,20040,Oaxaca,Sur,8,1,huautepec,0
+20,41,20041,Oaxaca,Sur,8,1,huautla de jimenez,0
+20,44,20044,Oaxaca,Sur,8,1B,loma bonita,1
+20,57,20057,Oaxaca,Sur,8,1B,matias romero avenda?o,1
+20,59,20059,Oaxaca,Sur,8,1,miahuatlan de porfirio diaz,0
+20,67,20067,Oaxaca,Sur,8,1,oaxaca de juarez,0
+20,79,20079,Oaxaca,Sur,8,1C,salina cruz,1
+20,105,20105,Oaxaca,Sur,8,1,san antonino monte verde,0
+20,107,20107,Oaxaca,Sur,8,1,san antonio de la cal,0
+20,134,20134,Oaxaca,Sur,8,1A,san felipe jalapa de diaz,1
+20,135,20135,Oaxaca,Sur,8,1,san felipe tejalapam,0
+20,136,20136,Oaxaca,Sur,8,1B,san felipe usila,1
+20,149,20149,Oaxaca,Sur,8,1,san francisco sola,0
+20,157,20157,Oaxaca,Sur,8,1,san jacinto amilpas,0
+20,178,20178,Oaxaca,Sur,8,1,san juan bautista guelache,0
+20,184,20184,Oaxaca,Sur,8,1B,san juan bautista tuxtepec,1
+20,198,20198,Oaxaca,Sur,8,1B,san juan guichicovi,1
+20,205,20205,Oaxaca,Sur,8,1B,san juan lalana,1
+20,227,20227,Oaxaca,Sur,8,1,san lorenzo cacaotepec,0
+20,232,20232,Oaxaca,Sur,8,1B,san lucas ojitlan,1
+20,255,20255,Oaxaca,Sur,8,1,san mateo sindihui,0
+20,257,20257,Oaxaca,Sur,8,1,san melchor betaza,0
+20,284,20284,Oaxaca,Sur,8,1,san miguel tilquiapam,0
+20,293,20293,Oaxaca,Sur,8,1,san pablo etla,0
+20,295,20295,Oaxaca,Sur,8,1,san pablo huixtepec,0
+20,318,20318,Oaxaca,Sur,8,1B,san pedro mixtepec,1
+20,333,20333,Oaxaca,Sur,8,1,san pedro totolapam,0
+20,348,20348,Oaxaca,Sur,8,1,san sebastian tecomaxtlahuaca,0
+20,350,20350,Oaxaca,Sur,8,1,san sebastian tutla,0
+20,352,20352,Oaxaca,Sur,8,1,san simon zahuatlan,0
+20,361,20361,Oaxaca,Sur,8,1,santa catalina quieri,0
+20,364,20364,Oaxaca,Sur,8,1,santa catarina juquila,0
+20,377,20377,Oaxaca,Sur,8,1,santa cruz itundujia,0
+20,384,20384,Oaxaca,Sur,8,1,santa cruz xitla,0
+20,385,20385,Oaxaca,Sur,8,1,santa cruz xoxocotlan,0
+20,386,20386,Oaxaca,Sur,8,1,santa cruz zenzontepec,0
+20,390,20390,Oaxaca,Sur,8,1,santa lucia del camino,0
+20,392,20392,Oaxaca,Sur,8,1,santa lucia monteverde,0
+20,393,20393,Oaxaca,Sur,8,1,santa lucia ocotlan,0
+20,397,20397,Oaxaca,Sur,8,1,heroica ciudad de tlaxiaco,0
+20,399,20399,Oaxaca,Sur,8,1,santa maria atzompa,0
+20,409,20409,Oaxaca,Sur,8,1,santa maria del tule,0
+20,413,20413,Oaxaca,Sur,8,1B,santa maria huatulco,1
+20,414,20414,Oaxaca,Sur,8,1B,santa maria huazolotitlan,1
+20,427,20427,Oaxaca,Sur,8,1B,santa maria petapa,1
+20,438,20438,Oaxaca,Sur,8,1,santa maria tlalixtac,0
+20,441,20441,Oaxaca,Sur,8,1C,santa maria xadani,1
+20,448,20448,Oaxaca,Sur,8,1,santa maria zaniza,0
+20,468,20468,Oaxaca,Sur,8,1B,santiago jocotepec,1
+20,469,20469,Oaxaca,Sur,8,1,santiago juxtlahuaca,0
+20,473,20473,Oaxaca,Sur,8,1,santiago laxopa,0
+20,482,20482,Oaxaca,Sur,8,1B,santiago pinotepa nacional,1
+20,485,20485,Oaxaca,Sur,8,1B,santiago tapextla,1
+20,491,20491,Oaxaca,Sur,8,1,santiago textitlan,0
+20,494,20494,Oaxaca,Sur,8,1,santiago tlazoyaltepec,0
+20,498,20498,Oaxaca,Sur,8,1B,santiago yaveo,1
+20,500,20500,Oaxaca,Sur,8,1,santiago yosondua,0
+20,502,20502,Oaxaca,Sur,8,1,santiago zacatepec,0
+20,515,20515,Oaxaca,Sur,8,1C,santo domingo tehuantepec,1
+20,520,20520,Oaxaca,Sur,8,1,santo domingo tonala,0
+20,526,20526,Oaxaca,Sur,8,1B,santos reyes nopala,1
+20,543,20543,Oaxaca,Sur,8,1B,tataltepec de valdes,1
+20,546,20546,Oaxaca,Sur,8,1,teotitlan del valle,0
+20,553,20553,Oaxaca,Sur,8,1,tlalixtac de cabrera,0
+20,554,20554,Oaxaca,Sur,8,1,totontepec villa de morelos,0
+20,570,20570,Oaxaca,Sur,8,1,zimatlan de alvarez,0
+21,3,21003,Puebla,Sur,8,1,acatlan,0
+21,10,21010,Puebla,Sur,8,1,ajalpan,0
+21,15,21015,Puebla,Sur,8,1,amozoc,0
+21,17,21017,Puebla,Sur,8,1,atempan,0
+21,19,21019,Puebla,Sur,8,1,atlixco,0
+21,36,21036,Puebla,Sur,8,1,coyomeapan,0
+21,41,21041,Puebla,Sur,8,1,cuautlancingo,0
+21,45,21045,Puebla,Sur,8,1,chalchicomula de sesma,0
+21,48,21048,Puebla,Sur,8,1,chiautzingo,0
+21,49,21049,Puebla,Sur,8,1,chiconcuautla,0
+21,51,21051,Puebla,Sur,8,1,chietla,0
+21,53,21053,Puebla,Sur,8,1,chignahuapan,0
+21,58,21058,Puebla,Sur,8,1,chilchotla,0
+21,67,21067,Puebla,Sur,8,1,guadalupe victoria,0
+21,71,21071,Puebla,Sur,8,1,huauchinango,0
+21,72,21072,Puebla,Sur,8,1,huehuetla,0
+21,83,21083,Puebla,Sur,8,1,ixtacamaxtitlan,0
+21,85,21085,Puebla,Sur,8,1,izucar de matamoros,0
+21,86,21086,Puebla,Sur,8,1,jalpan,0
+21,94,21094,Puebla,Sur,8,1,libres,0
+21,99,21099,Puebla,Sur,8,1,ca?ada morelos,0
+21,114,21114,Puebla,Sur,8,1,puebla,0
+21,115,21115,Puebla,Sur,8,1,quecholac,0
+21,116,21116,Puebla,Sur,8,1,quimixtlan,0
+21,118,21118,Puebla,Sur,8,1,los reyes de juarez,0
+21,119,21119,Puebla,Sur,8,1,san andres cholula,0
+21,122,21122,Puebla,Sur,8,1,san felipe teotlalcingo,0
+21,124,21124,Puebla,Sur,8,1,san gabriel chilac,0
+21,128,21128,Puebla,Sur,8,1,san jose chiapa,0
+21,132,21132,Puebla,Sur,8,1,san martin texmelucan,0
+21,138,21138,Puebla,Sur,8,1,san nicolas de los ranchos,0
+21,140,21140,Puebla,Sur,8,1,san pedro cholula,0
+21,148,21148,Puebla,Sur,8,1,santa isabel cholula,0
+21,149,21149,Puebla,Sur,8,1,santiago miahuatlan,0
+21,154,21154,Puebla,Sur,8,1,tecamachalco,0
+21,156,21156,Puebla,Sur,8,1,tehuacan,0
+21,161,21161,Puebla,Sur,8,1,tepanco de lopez,0
+21,168,21168,Puebla,Sur,8,1A,tepexco,1
+21,169,21169,Puebla,Sur,8,1,tepexi de rodriguez,0
+21,172,21172,Puebla,Sur,8,1,tetela de ocampo,0
+21,174,21174,Puebla,Sur,8,1,teziutlan,0
+21,178,21178,Puebla,Sur,8,1,tlacuilotepec,0
+21,183,21183,Puebla,Sur,8,1,tlaola,0
+21,186,21186,Puebla,Sur,8,1,tlatlauquitepec,0
+21,207,21207,Puebla,Sur,8,1,zacapoaxtla,0
+22,1,22001,Quer?taro,Sur,8,1,amealco de bonfil,0
+22,3,22003,Quer?taro,Sur,8,1,arroyo seco,0
+22,4,22004,Quer?taro,Sur,8,1,cadereyta de montes,0
+22,5,22005,Quer?taro,Sur,8,1,colon,0
+22,6,22006,Quer?taro,Sur,8,1,corregidora,0
+22,7,22007,Quer?taro,Sur,8,1,ezequiel montes,0
+22,10,22010,Quer?taro,Sur,8,1A,landa de matamoros,1
+22,11,22011,Quer?taro,Sur,8,1,el marques,0
+22,14,22014,Quer?taro,Sur,8,1,queretaro,0
+22,16,22016,Quer?taro,Sur,8,1,san juan del rio,0
+22,17,22017,Quer?taro,Sur,8,1,tequisquiapan,0
+22,18,22018,Quer?taro,Sur,8,1,toliman,0
+23,1,23001,Quintana Roo,Peninsular,7,1F,cozumel,1
+23,2,23002,Quintana Roo,Peninsular,7,1D,felipe carrillo puerto,1
+23,3,23003,Quintana Roo,Peninsular,7,1C,isla mujeres,1
+23,4,23004,Quintana Roo,Peninsular,7,1C,othon p. blanco,1
+23,5,23005,Quintana Roo,Peninsular,7,1C,benito juarez,1
+23,6,23006,Quintana Roo,Peninsular,7,1B,jose maria morelos,1
+23,7,23007,Quintana Roo,Peninsular,7,1B,lazaro cardenas,1
+23,8,23008,Quintana Roo,Peninsular,7,1B,solidaridad,1
+23,9,23009,Quintana Roo,Peninsular,7,1B,tulum,1
+24,3,24003,San Luis Potos?,Noreste,4,1B,aquismon,1
+24,6,24006,San Luis Potos?,Sur,8,1,catorce,0
+24,7,24007,San Luis Potos?,Noreste,4,1,cedral,0
+24,8,24008,San Luis Potos?,Noreste,4,1A,cerritos,1
+24,11,24011,San Luis Potos?,Noreste,4,1A,ciudad fernandez,1
+24,13,24013,San Luis Potos?,Noreste,4,1D,ciudad valles,1
+24,20,24020,San Luis Potos?,Sur,8,1A,matehuala,1
+24,21,24021,San Luis Potos?,Sur,8,1,mexquitic de carmona,0
+24,22,24022,San Luis Potos?,Sur,8,1,moctezuma,0
+24,24,24024,San Luis Potos?,Noreste,4,1A,rioverde,1
+24,26,24026,San Luis Potos?,Noreste,4,1B,san antonio,1
+24,28,24028,San Luis Potos?,Sur,8,1,san luis potosi,0
+24,32,24032,San Luis Potos?,Sur,8,1,santa maria del rio,0
+24,35,24035,San Luis Potos?,Sur,8,1,soledad de graciano sanchez,0
+24,36,24036,San Luis Potos?,Noreste,4,1B,tamasopo,1
+24,37,24037,San Luis Potos?,Noreste,4,1B,tamazunchale,1
+24,39,24039,San Luis Potos?,Noreste,4,1D,tampamolon corona,1
+24,40,24040,San Luis Potos?,Noreste,4,1D,tamuin,1
+24,41,24041,San Luis Potos?,Noreste,4,1B,tanlajas,1
+24,46,24046,San Luis Potos?,Sur,8,1,villa de arriaga,0
+24,49,24049,San Luis Potos?,Sur,8,1,villa de ramos,0
+24,50,24050,San Luis Potos?,Sur,8,1,villa de reyes,0
+24,54,24054,San Luis Potos?,Noreste,4,1B,xilitla,1
+24,57,24057,San Luis Potos?,Sur,8,1B,matlapa,1
+25,1,25001,Sinaloa,Noroeste,5,1F,ahome,1
+25,2,25002,Sinaloa,Noroeste,5,1E,angostura,1
+25,4,25004,Sinaloa,Noroeste,5,1D,concordia,1
+25,6,25006,Sinaloa,Noroeste,5,1F,culiacan,1
+25,8,25008,Sinaloa,Noroeste,5,1D,elota,1
+25,9,25009,Sinaloa,Noroeste,5,1D,escuinapa,1
+25,10,25010,Sinaloa,Noroeste,5,1E,el fuerte,1
+25,11,25011,Sinaloa,Noroeste,5,1F,guasave,1
+25,12,25012,Sinaloa,Noroeste,5,1D,mazatlan,1
+25,13,25013,Sinaloa,Noroeste,5,1E,mocorito,1
+25,15,25015,Sinaloa,Noroeste,5,1F,salvador alvarado,1
+25,17,25017,Sinaloa,Noroeste,5,1E,sinaloa,1
+26,2,26002,Sonora,Noroeste,5,1B,agua prieta,1
+26,3,26003,Sonora,Noroeste,5,1E,alamos,1
+26,14,26014,Sonora,Noroeste,5,1D,baviacora,1
+26,17,26017,Sonora,Noroeste,5,1E,caborca,1
+26,18,26018,Sonora,Noroeste,5,1F,cajeme,1
+26,19,26019,Sonora,Noroeste,5,1A,cananea,1
+26,21,26021,Sonora,Noroeste,5,1E,la colorada,1
+26,23,26023,Sonora,Noroeste,5,1B,cumpas,1
+26,29,26029,Sonora,Noroeste,5,1E,guaymas,1
+26,30,26030,Sonora,Noroeste,5,1F,hermosillo,1
+26,33,26033,Sonora,Noroeste,5,1E,huatabampo,1
+26,36,26036,Sonora,Noroeste,5,1C,magdalena,1
+26,41,26041,Sonora,Noroeste,5,1B,nacozari de garcia,1
+26,42,26042,Sonora,Noroeste,5,1E,navojoa,1
+26,43,26043,Sonora,Noroeste,5,1A,nogales,1
+26,48,26048,Sonora,Noroeste,5,1E,puerto pe?asco,1
+26,55,26055,Sonora,Baja California,1,1F,san luis rio colorado,1
+26,56,26056,Sonora,Noroeste,5,1E,san miguel de horcasitas,1
+26,58,26058,Sonora,Noroeste,5,1C,santa ana,1
+26,60,26060,Sonora,Noroeste,5,1E,saric,1
+26,71,26071,Sonora,Noroeste,5,1E,benito juarez,1
+27,1,27001,Tabasco,Sur,8,1C,balancan,1
+27,2,27002,Tabasco,Sur,8,1C,cardenas,1
+27,3,27003,Tabasco,Sur,8,1C,centla,1
+27,4,27004,Tabasco,Sur,8,1D,centro,1
+27,5,27005,Tabasco,Sur,8,1C,comalcalco,1
+27,6,27006,Tabasco,Sur,8,1C,cunduacan,1
+27,7,27007,Tabasco,Sur,8,1C,emiliano zapata,1
+27,8,27008,Tabasco,Sur,8,1C,huimanguillo,1
+27,9,27009,Tabasco,Sur,8,1C,jalapa,1
+27,10,27010,Tabasco,Sur,8,1C,jalpa de mendez,1
+27,12,27012,Tabasco,Sur,8,1D,macuspana,1
+27,13,27013,Tabasco,Sur,8,1C,nacajuca,1
+27,14,27014,Tabasco,Sur,8,1C,paraiso,1
+27,15,27015,Tabasco,Sur,8,1C,tacotalpa,1
+27,16,27016,Tabasco,Sur,8,1C,teapa,1
+27,17,27017,Tabasco,Sur,8,1D,tenosique,1
+28,3,28003,Tamaulipas,Noreste,4,1C,altamira,1
+28,6,28006,Tamaulipas,Noreste,4,1A,bustamante,1
+28,9,28009,Tamaulipas,Noreste,4,1C,ciudad madero,1
+28,12,28012,Tamaulipas,Noreste,4,1C,gonzalez,1
+28,19,28019,Tamaulipas,Noreste,4,1B,llera,1
+28,21,28021,Tamaulipas,Noreste,4,1C,el mante,1
+28,22,28022,Tamaulipas,Noreste,4,1D,matamoros,1
+28,25,28025,Tamaulipas,Noreste,4,1D,miguel aleman,1
+28,26,28026,Tamaulipas,Noreste,4,1A,miquihuana,1
+28,27,28027,Tamaulipas,Noreste,4,1E,nuevo laredo,1
+28,32,28032,Tamaulipas,Noreste,4,1E,reynosa,1
+28,33,28033,Tamaulipas,Noreste,4,1E,rio bravo,1
+28,34,28034,Tamaulipas,Noreste,4,1B,san carlos,1
+28,35,28035,Tamaulipas,Noreste,4,1C,san fernando,1
+28,37,28037,Tamaulipas,Noreste,4,1C,soto la marina,1
+28,38,28038,Tamaulipas,Noreste,4,1C,tampico,1
+28,39,28039,Tamaulipas,Noreste,4,1,tula,0
+28,40,28040,Tamaulipas,Noreste,4,1C,valle hermoso,1
+28,41,28041,Tamaulipas,Noreste,4,1C,victoria,1
+29,2,29002,Tlaxcala,Sur,8,1,apetatitlan de antonio carvajal,0
+29,4,29004,Tlaxcala,Sur,8,1,atltzayanca,0
+29,5,29005,Tlaxcala,Sur,8,1,apizaco,0
+29,6,29006,Tlaxcala,Sur,8,1,calpulalpan,0
+29,8,29008,Tlaxcala,Sur,8,1,cuapiaxtla,0
+29,10,29010,Tlaxcala,Sur,8,1,chiautempan,0
+29,13,29013,Tlaxcala,Sur,8,1,huamantla,0
+29,14,29014,Tlaxcala,Sur,8,1,hueyotlipan,0
+29,15,29015,Tlaxcala,Sur,8,1,ixtacuixtla de mariano matamoros,0
+29,16,29016,Tlaxcala,Sur,8,1,ixtenco,0
+29,17,29017,Tlaxcala,Sur,8,1,mazatecochco de jose maria morelos,0
+29,18,29018,Tlaxcala,Sur,8,1,contla de juan cuamatzi,0
+29,21,29021,Tlaxcala,Sur,8,1,nanacamilpa de mariano arista,0
+29,23,29023,Tlaxcala,Sur,8,1,nativitas,0
+29,24,29024,Tlaxcala,Sur,8,1,panotla,0
+29,25,29025,Tlaxcala,Sur,8,1,san pablo del monte,0
+29,26,29026,Tlaxcala,Sur,8,1,santa cruz tlaxcala,0
+29,28,29028,Tlaxcala,Sur,8,1,teolocholco,0
+29,29,29029,Tlaxcala,Sur,8,1,tepeyanco,0
+29,31,29031,Tlaxcala,Sur,8,1,tetla de la solidaridad,0
+29,32,29032,Tlaxcala,Sur,8,1,tetlatlahuca,0
+29,33,29033,Tlaxcala,Sur,8,1,tlaxcala,0
+29,34,29034,Tlaxcala,Sur,8,1,tlaxco,0
+29,36,29036,Tlaxcala,Sur,8,1,totolac,0
+29,39,29039,Tlaxcala,Sur,8,1,xaloztoc,0
+29,40,29040,Tlaxcala,Sur,8,1,xaltocan,0
+29,41,29041,Tlaxcala,Sur,8,1,papalotla de xicohtencatl,0
+29,42,29042,Tlaxcala,Sur,8,1,xicohtzinco,0
+29,43,29043,Tlaxcala,Sur,8,1,yauhquemehcan,0
+29,44,29044,Tlaxcala,Sur,8,1,zacatelco,0
+29,48,29048,Tlaxcala,Sur,8,1,la magdalena tlaltelulco,0
+29,50,29050,Tlaxcala,Sur,8,1,san francisco tetlanohcan,0
+29,51,29051,Tlaxcala,Sur,8,1,san jeronimo zacualpan,0
+29,52,29052,Tlaxcala,Sur,8,1,san jose teacalco,0
+29,53,29053,Tlaxcala,Sur,8,1,san juan huactzinco,0
+29,54,29054,Tlaxcala,Sur,8,1,san lorenzo axocomanitla,0
+29,57,29057,Tlaxcala,Sur,8,1,santa apolonia teacalco,0
+29,58,29058,Tlaxcala,Sur,8,1,santa catarina ayometla,0
+29,59,29059,Tlaxcala,Sur,8,1,santa cruz quilehtla,0
+30,3,30003,Veracruz de Ignacio de la Llave,Sur,8,1B,acayucan,1
+30,9,30009,Veracruz de Ignacio de la Llave,Sur,8,1,alto lucero de gutierrez barrios,0
+30,10,30010,Veracruz de Ignacio de la Llave,Sur,8,1,altotonga,0
+30,21,30021,Veracruz de Ignacio de la Llave,Sur,8,1A,atoyac,1
+30,23,30023,Veracruz de Ignacio de la Llave,Sur,8,1A,atzalan,1
+30,25,30025,Veracruz de Ignacio de la Llave,Sur,8,1,ayahualulco,0
+30,28,30028,Veracruz de Ignacio de la Llave,Sur,8,1C,boca del rio,1
+30,30,30030,Veracruz de Ignacio de la Llave,Sur,8,1,camerino z. mendoza,0
+30,35,30035,Veracruz de Ignacio de la Llave,Sur,8,1B,citlaltepetl,1
+30,39,30039,Veracruz de Ignacio de la Llave,Sur,8,1C,coatzacoalcos,1
+30,44,30044,Veracruz de Ignacio de la Llave,Sur,8,1,cordoba,0
+30,47,30047,Veracruz de Ignacio de la Llave,Sur,8,1,coscomatepec,0
+30,49,30049,Veracruz de Ignacio de la Llave,Sur,8,1B,cotaxtla,1
+30,50,30050,Veracruz de Ignacio de la Llave,Sur,8,1A,coxquihui,1
+30,56,30056,Veracruz de Ignacio de la Llave,Sur,8,1B,chiconamel,1
+30,61,30061,Veracruz de Ignacio de la Llave,Sur,8,1B,las choapas,1
+30,68,30068,Veracruz de Ignacio de la Llave,Sur,8,1,fortin,0
+30,70,30070,Veracruz de Ignacio de la Llave,Sur,8,1B,hidalgotitlan,1
+30,71,30071,Veracruz de Ignacio de la Llave,Sur,8,1,huatusco,0
+30,77,30077,Veracruz de Ignacio de la Llave,Sur,8,1B,isla,1
+30,83,30083,Veracruz de Ignacio de la Llave,Sur,8,1A,ixhuatlan de madero,1
+30,85,30085,Veracruz de Ignacio de la Llave,Sur,8,1,ixtaczoquitlan,0
+30,87,30087,Veracruz de Ignacio de la Llave,Sur,8,1,xalapa,0
+30,91,30091,Veracruz de Ignacio de la Llave,Sur,8,1B,jesus carranza,1
+30,94,30094,Veracruz de Ignacio de la Llave,Sur,8,1B,juan rodriguez clara,1
+30,98,30098,Veracruz de Ignacio de la Llave,Sur,8,1,magdalena,0
+30,101,30101,Veracruz de Ignacio de la Llave,Sur,8,1,mariano escobedo,0
+30,102,30102,Veracruz de Ignacio de la Llave,Sur,8,1B,martinez de la torre,1
+30,104,30104,Veracruz de Ignacio de la Llave,Sur,8,1B,mecayapan,1
+30,105,30105,Veracruz de Ignacio de la Llave,Sur,8,1B,medellin,1
+30,108,30108,Veracruz de Ignacio de la Llave,Sur,8,1C,minatitlan,1
+30,111,30111,Veracruz de Ignacio de la Llave,Sur,8,1B,moloacan,1
+30,115,30115,Veracruz de Ignacio de la Llave,Sur,8,1,nogales,0
+30,118,30118,Veracruz de Ignacio de la Llave,Sur,8,1,orizaba,0
+30,123,30123,Veracruz de Ignacio de la Llave,Noreste,4,1B,panuco,1
+30,124,30124,Veracruz de Ignacio de la Llave,Sur,8,1B,papantla,1
+30,126,30126,Veracruz de Ignacio de la Llave,Sur,8,1A,paso de ovejas,1
+30,128,30128,Veracruz de Ignacio de la Llave,Sur,8,1,perote,0
+30,129,30129,Veracruz de Ignacio de la Llave,Sur,8,1C,platon sanchez,1
+30,131,30131,Veracruz de Ignacio de la Llave,Sur,8,1B,poza rica de hidalgo,1
+30,133,30133,Veracruz de Ignacio de la Llave,Noreste,4,1C,pueblo viejo,1
+30,138,30138,Veracruz de Ignacio de la Llave,Sur,8,1,rio blanco,0
+30,141,30141,Veracruz de Ignacio de la Llave,Sur,8,1A,san andres tuxtla,1
+30,148,30148,Veracruz de Ignacio de la Llave,Sur,8,1B,soledad de doblado,1
+30,160,30160,Veracruz de Ignacio de la Llave,Sur,8,1A,alamo temapache,1
+30,174,30174,Veracruz de Ignacio de la Llave,Sur,8,1B,tierra blanca,1
+30,188,30188,Veracruz de Ignacio de la Llave,Sur,8,1,totutla,0
+30,189,30189,Veracruz de Ignacio de la Llave,Sur,8,1B,tuxpan,1
+30,191,30191,Veracruz de Ignacio de la Llave,Sur,8,1B,ursulo galvan,1
+30,193,30193,Veracruz de Ignacio de la Llave,Sur,8,1C,veracruz,1
+30,205,30205,Veracruz de Ignacio de la Llave,Noreste,4,1B,el higo,1
+31,1,31001,Yucat?n,Peninsular,7,1B,abala,1
+31,2,31002,Yucat?n,Peninsular,7,1B,acanceh,1
+31,3,31003,Yucat?n,Peninsular,7,1B,akil,1
+31,6,31006,Yucat?n,Peninsular,7,1B,buctzotz,1
+31,8,31008,Yucat?n,Peninsular,7,1B,calotmul,1
+31,9,31009,Yucat?n,Peninsular,7,1B,cansahcab,1
+31,13,31013,Yucat?n,Peninsular,7,1B,conkal,1
+31,15,31015,Yucat?n,Peninsular,7,1B,cuzama,1
+31,19,31019,Yucat?n,Peninsular,7,1B,chemax,1
+31,21,31021,Yucat?n,Peninsular,7,1B,chichimila,1
+31,24,31024,Yucat?n,Peninsular,7,1B,chumayel,1
+31,28,31028,Yucat?n,Peninsular,7,1B,dzilam de bravo,1
+31,31,31031,Yucat?n,Peninsular,7,1B,dzoncauich,1
+31,32,31032,Yucat?n,Peninsular,7,1B,espita,1
+31,34,31034,Yucat?n,Peninsular,7,1B,hocaba,1
+31,35,31035,Yucat?n,Peninsular,7,1B,hoctun,1
+31,36,31036,Yucat?n,Peninsular,7,1B,homun,1
+31,38,31038,Yucat?n,Peninsular,7,1B,hunucma,1
+31,40,31040,Yucat?n,Peninsular,7,1C,izamal,1
+31,41,31041,Yucat?n,Peninsular,7,1B,kanasin,1
+31,44,31044,Yucat?n,Peninsular,7,1B,kinchil,1
+31,46,31046,Yucat?n,Peninsular,7,1B,mama,1
+31,50,31050,Yucat?n,Peninsular,7,1C,merida,1
+31,52,31052,Yucat?n,Peninsular,7,1B,motul,1
+31,53,31053,Yucat?n,Peninsular,7,1B,muna,1
+31,54,31054,Yucat?n,Peninsular,7,1B,muxupip,1
+31,56,31056,Yucat?n,Peninsular,7,1A,oxkutzcab,1
+31,57,31057,Yucat?n,Peninsular,7,1B,panaba,1
+31,58,31058,Yucat?n,Peninsular,7,1C,peto,1
+31,59,31059,Yucat?n,Peninsular,7,1B,progreso,1
+31,62,31062,Yucat?n,Peninsular,7,1B,sacalum,1
+31,67,31067,Yucat?n,Peninsular,7,1B,seye,1
+31,74,31074,Yucat?n,Peninsular,7,1B,tahmek,1
+31,76,31076,Yucat?n,Peninsular,7,1B,tecoh,1
+31,79,31079,Yucat?n,Peninsular,7,1B,tekax,1
+31,80,31080,Yucat?n,Peninsular,7,1B,tekit,1
+31,82,31082,Yucat?n,Peninsular,7,1B,telchac pueblo,1
+31,83,31083,Yucat?n,Peninsular,7,1B,telchac puerto,1
+31,86,31086,Yucat?n,Peninsular,7,1B,tepakan,1
+31,89,31089,Yucat?n,Peninsular,7,1B,ticul,1
+31,90,31090,Yucat?n,Peninsular,7,1B,timucuy,1
+31,91,31091,Yucat?n,Peninsular,7,1C,tinum,1
+31,92,31092,Yucat?n,Peninsular,7,1B,tixcacalcupul,1
+31,96,31096,Yucat?n,Peninsular,7,1A,tizimin,1
+31,98,31098,Yucat?n,Peninsular,7,1B,tzucacab,1
+31,101,31101,Yucat?n,Peninsular,7,1B,uman,1
+31,102,31102,Yucat?n,Peninsular,7,1B,valladolid,1
+31,103,31103,Yucat?n,Peninsular,7,1B,xocchel,1
+31,104,31104,Yucat?n,Peninsular,7,1C,yaxcaba,1
+31,105,31105,Yucat?n,Peninsular,7,1B,yaxkukul,1
+32,5,32005,Zacatecas,Sur,8,1,calera,0
+32,6,32006,Zacatecas,Sur,8,1,ca?itas de felipe pescador,0
+32,7,32007,Zacatecas,Noreste,4,1,concepcion del oro,0
+32,10,32010,Zacatecas,Sur,8,1,fresnillo,0
+32,14,32014,Zacatecas,Norte,6,1,general francisco r. murguia,0
+32,17,32017,Zacatecas,Sur,8,1,guadalupe,0
+32,20,32020,Zacatecas,Norte,6,1,jerez,0
+32,22,32022,Zacatecas,Norte,6,1,juan aldama,0
+32,23,32023,Zacatecas,Sur,8,1,juchipila,0
+32,24,32024,Zacatecas,Sur,8,1,loreto,0
+32,26,32026,Zacatecas,Norte,6,1,mazapil,0
+32,31,32031,Zacatecas,Sur,8,1,monte escobedo,0
+32,34,32034,Zacatecas,Sur,8,1,nochistlan de mejia,0
+32,35,32035,Zacatecas,Sur,8,1,noria de angeles,0
+32,36,32036,Zacatecas,Sur,8,1,ojocaliente,0
+32,38,32038,Zacatecas,Sur,8,1,pinos,0
+32,39,32039,Zacatecas,Norte,6,1,rio grande,0
+32,40,32040,Zacatecas,Norte,6,1,sain alto,0
+32,42,32042,Zacatecas,Norte,6,1,sombrerete,0
+32,44,32044,Zacatecas,Sur,8,1,tabasco,0
+32,46,32046,Zacatecas,Sur,8,1,tepetongo,0
+32,48,32048,Zacatecas,Sur,8,1,tlaltenango de sanchez roman,0
+32,51,32051,Zacatecas,Sur,8,1,villa de cos,0
+32,54,32054,Zacatecas,Sur,8,1,villa hidalgo,0
+32,55,32055,Zacatecas,Sur,8,1,villanueva,0
+32,56,32056,Zacatecas,Sur,8,1,zacatecas,0
+32,57,32057,Zacatecas,Sur,8,1,trancoso,0

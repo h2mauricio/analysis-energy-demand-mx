@@ -1,0 +1,979 @@
+---
+title: "Analysis of ENCEVI 2018"
+subtitle: "Characteristics of Households and Dwellings"
+author: '[Mauricio Hernandez](http://mauricioh2.com)'
+date: '`r Sys.Date()`'
+bibliography: energy_mex.bib
+---
+
+# Objective
+
+The National Institute of Statistics and Geography of Mexico (INEGI) conducted the National Survey on Energy Consumption in Private Homes (ENCEVI) 2018. This survey was held from January 8 to June 29, 2018. The main goal of this survey was to collect detailed information about the energy consumption of the residential sector in Mexico. 
+
+ENCEVI was designed to generate statistical information that allows the Mexican Government to understand the consumption of different energy sources from the Mexican private households, and their habits and practices in energy management.
+
+We are using ENCEVI data and other information sources to design and build a bottom-up energy model for the Mexican residential sector. We intend to use this model to support stakeholders to evaluate public energy policies that can help to evolve to efficient and sustainable energy systems.
+
+This section describes the first steps performed to analyze the electricity consumption of the households surveyed by ENCEVI. The main objectives of this section are: 
+
+1. Merge the data collected in ENCEVI's survey related to the characteristics of dwellings and households surveyed. (See section [Loading Datasets and Merging Data](#loading_datasets_and_merging_data))
+2. Show other general statistics of the data used to perform this analysis (See section [Descriptive Analysis](#descriptive_analysis)).
+3. Obtain the number of dwellings connected to the grid (classified by region and show the users with businesses at home).
+
+```{r sh, include=FALSE}
+#Remove all objects from current workspace and call garbage collector
+rm(list=ls())
+gc()
+
+source("./script/general_setup_functions.R")
+#devtools::install_github("haozhu233/kableExtra")
+#Generates the css needed by summarytools
+st_css()
+```
+
+```{r knitr_init, include=FALSE}
+#options(max.print = "75")
+opts_chunk$set(echo = TRUE,
+	             cache = FALSE,
+               prompt = FALSE,
+               tidy = FALSE,
+               comment = NA,
+               message=FALSE,
+               warning=FALSE,
+               fig.path = 'figures/')
+```
+
+```{r setup, include=FALSE}
+#devtools::install_github("ropensci/plotly")
+knitr::opts_chunk$set(fig.width = 8, collapse = TRUE)
+
+knitr::knit_hooks$set(output = function(x, options){
+  if(!is.null(options$max_height)){
+    paste('<pre style = "max-height:',
+          options$max_height, 
+          ';float: left; width: 910px; overflow-y: auto;">',
+          x,
+          "</pre>",
+          sep = "")
+  }else{
+    x
+  }
+})
+```
+<br/>
+
+# Loading datasets and Merging Data
+
+The following files are required to run this analysis:
+
+- **encevi.csv**^1^- This dataset includes information related to the characteristics on the main final uses of energy in the  dwellings according to the socioeconomic characteristics of the households
+- **hogar.csv**^1^- This dataset includes the characteristics of the dwellings inhabited by the members of the households surveyed.
+- **vivienda.csv**^1^- It includes the characteristics of the households that inhabit the dwellings
+- [**ENCEVI_CLVE_ENT_MUN.dbf**](/input/ENCEVI_CLVE_ENT_MUN.dbf)- Dataset with the dwellings ids and the municipalities ids included in ENCEVI 2018
+- [**AGEEML_INEGI_2019.dbf**](/input/AGEEML_INEGI_2019.dbf) - Dataset with information of all the Mexican municipalities (ids, location, and some demographics). Information obtained from INEGI website.
+- **tariffs_municipality.csv** - Electricity tariffs of each municipality
+
+</br>^1^These datasets were downloaded from INEGI website: <http://en.www.inegi.org.mx/programas/encevi/2018/>
+```{r}
+#This table contains characteristics on the main final uses of energy in the 
+#dwellings according to the socioeconomic characteristics of the households
+df.encevi <- read.csv("input/encevi.csv")
+
+#This table contains the characteristics of the dwellings inhabited by the
+#members of the households surveyed.
+df.dwelling <- read.csv("input/vivienda.csv")
+
+#In this table are contained the characteristics of the households that 
+#inhabit the dwellings.
+df.household <- read.csv("input/hogar.csv")
+```
+
+Then, we merged the datasets _"ENCEVI_CLVE_ENT_MUN.dbf"_ and _"AGEEML_INEGI_2019.dbf"_ to create the dataset _[ENCEVI_municipalities.csv]_(/input/ENCEVI_municipalities.csv). This dataset includes the municipality ids and general information about the Mexican municipalities - like their name, latitude, longitude, and altitude.
+```{r}
+# Get municipality codes ordered and cleaned, results are stored in 
+# folder "/input", as INEGI_agem_short.csv, these data was provided 
+# by INEGI and it is related to ENCEVI 2018 survey
+#source('./script/municipality_codes_inegi.R')
+
+# Get tariffs and municipality codes by household ids, the results are 
+# stored in folder "/input", as agem_tariff_byfolio.csv. 
+source("./script/merge_ids_agem_tariffs.R")
+df.tariffs<- read.csv("./input/agem_tariff_byfolio.csv")
+```
+
+**Cleaning and Merging Dataframes**
+
+The datasets from ENCEVI listed above were merged between them by using the household's identifier. This identifier is called _"folio"_ in each dataset. 
+
+It is important to mention that to merge this data, we treated each record in the ENCEVI's datasets as information that applies to a single household or dwelling. Althought dwellings can be inhabited by multiple households. This means that a dwelling can have several houshold identifiers (they are not unique), but in the ENCEVI survey all the households surveyed are related only to one dwelling. For more information about the relationship between the ENCEVI's datasets, please see the database description documentation (*ENCEVI-Descripción de la base de datos*) that can be downloaded from INEGI's website: 
+<http://en.www.inegi.org.mx/contenidos/programas/encevi/2018/doc/encevi_2018_fd.pdf>
+
+```{r}
+names(df.encevi) <- tolower(colnames(df.encevi))
+names(df.dwelling) <- tolower(colnames(df.dwelling)) 
+names(df.household) <- tolower(colnames(df.household)) 
+
+#Rename first column as folio. This piece of code corrects a bug in the command
+colnames(df.encevi)[1] <- "folio"
+colnames(df.dwelling)[1] <- "folio"
+colnames(df.household)[1] <- "folio"
+colnames(df.dwelling)[colnames(df.dwelling)=="entidad"] <- "state.id"
+```
+
+```{r}
+# Merging ENCEVI and Dwelling datasets
+df.enc.dwell <- merge(df.encevi, df.dwelling, by="folio")
+
+# Merging encevi-dwelling dataframe with INEGI municipality codes dataframe
+df.enc.dwell <- merge(df.enc.dwell, df.tariffs, by="folio")
+
+# Merging encevi-household dataframe with INEGI municipality codes dataframe
+df.enc.dwell <- merge(df.enc.dwell, df.household, by="folio")
+```
+
+```{r}
+df.enc.dwell$region.f <- factor(df.enc.dwell$region,
+                                levels = c(1, 2, 3),
+                                labels = c("Extremely hot", 
+                                           "Temperate", 
+                                           "Tropical"))
+
+df.enc.dwell$dwelling.tenure <- factor(df.enc.dwell$tenencia,
+                                levels = c(1, 2, 3, 4, 5, 6),
+                                labels = c("Rented", 
+                                           "Borrowed", 
+                                           "Owned-Mortgage",
+                                           "Owned",
+                                           "Intestated", "Other"))
+
+df.enc.dwell$dwelling.tenure2 <-df.enc.dwell$tenencia
+df.enc.dwell$dwelling.tenure2[df.enc.dwell$tenencia == 2] <- 3
+df.enc.dwell$dwelling.tenure2[df.enc.dwell$tenencia == 3 | df.enc.dwell$tenencia == 4]  <- 2
+df.enc.dwell$dwelling.tenure2[df.enc.dwell$tenencia >= 5] <- 4
+
+df.enc.dwell$dwelling.tenure2 <- factor(df.enc.dwell$dwelling.tenure2,
+                                levels = c(1, 2, 3, 4),
+                                labels = c("Rented", "Owned", 
+                                           "Borrowed", "Other"))
+
+df.enc.dwell$state.f <- factor(df.enc.dwell$state.id,
+                               levels = c("1", "2", "3", "4", "5", "6", "7", 
+                                          "8", "9", "10","11", "12", "13", "14", 
+                                          "15", "16", "17", "18", "19", "20", 
+                                          "21", "22", "23", "24", "25", "26", 
+                                          "27", "28", "29", "30", "31", "32"),
+                               labels = c("Aguascalientes", "Baja California", 
+                                          "Baja California Sur", "Campeche", 
+                                          "Coahuila", "Colima", "Chiapas", 
+                                          "Chihuahua", "Mexico City", 
+                                          "Durango", "Guanajuato", "Guerrero", 
+                                          "Hidalgo", "Jalisco", "Mexico", 
+                                          "Michoacan", "Morelos", "Nayarit", 
+                                          "NuevoLeon", "Oaxaca", "Puebla", 
+                                          "Queretaro", "Quintana Roo", 
+                                          "San Luis Potosi", "Sinaloa", 
+                                          "Sonora", "Tabasco", "Tamaulipas", 
+                                          "Tlaxcala", "Veracruz", "Yucatan", 
+                                          "Zacatecas"))
+
+df.enc.dwell$stat.socio <- factor(df.enc.dwell$est_socio,
+                                    levels = c(1, 2, 3, 4),
+                                    labels = c("low", "mid-low", 
+                                               "mid-high", "high"))
+
+df.enc.dwell$dwelling.size <- factor(df.enc.dwell$super_cons,
+                                     levels = c(1, 2, 3, 4, 5, 6, 7, 9),
+                                     labels = c(">30m2", "31-55m2", "56-75m2", 
+                                                "76-100m2", "101-150m2", 
+                                                "151-200m2", "<201m2", 
+                                                "Don't know"))
+
+df.enc.dwell$dummy.house <- 1
+```
+
+# Descriptive Analysis
+**Main Statistics of ENCEVI's Dataset**
+
+The descriptive statistics of the variables is shown in `r t.ref("tbl_stats_encevi")`. Please refer to [ENCEVI database description documentation](http://en.www.inegi.org.mx/contenidos/programas/encevi/2018/doc/encevi_2018_fd.pdf) for a complete description of the meaning of each variable and their values.
+
+In ENCEVI 2018, the relationship among the number of households and the number of dwellings is one to one. This means that in the survey there are **no** records of dwellings with multiple households^1^. So the data reported by ENCEVI related to households are directly applicable to dwellings. In this document we refer to the statistics of dwellings and households indistinctively.
+
+^1^ According to the [INEGI Encuesta Intercensal 2015](https://www.inegi.org.mx/programas/intercensal/2015/), some dwellings in Mexico are occupied by more than one household.
+```{r tbl-stats-encevi, figure_captions("tbl_stats_encevi", "Homes represented by the survey by region")}
+#ref: https://cran.r-project.org/web/packages/kableExtra/vignettes/awesome_table_in_html.html
+stat.df.enc.dwell <- summarytools::descr(df.enc.dwell, 
+      weights = df.enc.dwell$factor_sem, 
+      round.digits = 3,
+      stats = c("mean", "sd", "min", "med", "max", "pct.valid"), 
+      transpose = TRUE)
+
+knitr::kable(stat.df.enc.dwell[order(row.names(stat.df.enc.dwell)), ], 
+      label = 'table-stats-encevi', digits = 3, align = 'c', booktabs = TRUE,
+  caption = paste(t.ref("tbl_stats_encevi"),
+                  'Summary statistics of ENCEVI dataset.')) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"),
+                fixed_thead = T) %>%
+  scroll_box(width = "100%", height = "300px")
+```
+
+## Households Surveyed and Features of Dwellings
+```{r}
+# Survey design construction (mmc), this computes the statistical errors
+df.enc.dwell$dummy.house <- 1
+
+mmc <- svydesign(id=~upm, strata=~est_dis, 
+                 data=df.enc.dwell, weights=~factor_sem)
+
+## Estimación total de viviendas particulares habitadas 
+tb.dwell <- svytotal(df.enc.dwell$dummy.house, mmc)
+
+# Estimación por Región del total de viviendas particulares habitadas 
+tb.dwell.region <- svyby(~dummy.house, by=~region.f, mmc, svytotal)  
+
+ea01n <- tb.dwell[[1]]  # Estimación puntual 
+er01n <- t(tb.dwell.region[2]) # Estimación puntual-Región 
+ea01e <- SE(tb.dwell)   # Error estándar 
+er01e <- t(data.frame(SE(tb.dwell.region)))  # Error estándar-Región 
+
+colnames(tb.dwell.region)[colnames(tb.dwell.region)=="dummy.house"] <- "dwellings"
+colnames(tb.dwell.region)[colnames(tb.dwell.region)=="region.f"] <- "region"
+
+tb.dwell <- as.data.frame(tb.dwell)
+tb.dwell.region$se <- round(tb.dwell.region$se,3)
+
+tb.dwell.region <- as.data.frame(tb.dwell.region)
+```
+
+According to INEGI, in 2017 there were 31,959,709 occupied dwellings in Mexico. [@national_institute_of_statistics_and_geography_hogares_2015], and in average each dwelling was inhabited by 3.7 people. These values are consistent with the estimations produced by ENCEVI, where `r format(sum(df.enc.dwell$dummy.house), big.mark=",")` households  were surveyed, representing `r format(tb.dwell$total, big.mark=",")` households (standard error: `r format(tb.dwell$SE, big.mark=",", decimal.mark=".")`).
+
+### Households by Region
+```{r ,tbl-survey-region,  figure_captions("tbl_survey_region", "Homes represented by the survey by region")}
+#datatable(tb.dwell.region, rownames = FALSE,
+#  options = list(dom = 't', scrollX = TRUE, fixedColumns = TRUE))
+knitr::kable(format(tb.dwell.region, big.mark=",", small.interval=3), 
+             row.names = F,
+             label = 'table-survey-region', 
+             digits = 3, align = 'c', booktabs = TRUE,
+  caption = paste(t.ref("tbl_survey_region"),
+                  'Homes represented by the survey by region') ) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "responsive"),
+                fixed_thead = T, full_width = F, position = "float_right")
+```
+
+ENCEVI classified the Mexican states in three climatic regions: 
+
+- **Extremely hot**. Northern states (9 states).
+- **Temperate**. Central states (14 states and Mexico City).
+- **Tropical**. Southern states (8 states).
+
+Althought these three regions do not reliably represent the Mexican climate zones^1^, ENCEVI was designed to be representative for these three regions.
+
+`r t.ref("tbl_survey_region")` shows the number of households/dwellings that are represented by ENCEVI in each climatic region. As the temperate region includes the Valley of Mexico Metropolitan Area, most of the occupied dwellings (`r round(tb.dwell.region['Temperate', 'dwellings']/tb.dwell$total, 2)`%) represented by the survey are located in this region
+
+^1^ According to several climatic studies, such as [@vidal_rosalia_regiones_2005], Mexico can be classified in 11 climatic regions.
+
+### Households by Socioeconomic Status {.tabset .tabset-fade .tabset-pills}
+
+```{r, results = FALSE}
+tb.socioc.status <- freq(df.enc.dwell$stat.socio, 
+                weight = df.enc.dwell$factor_sem,
+                plain.ascii = FALSE, style = "simple", method = "render",
+                headings = FALSE, report.nas = FALSE)
+
+tb.socioc.status.hot <- freq(df.enc.dwell$stat.socio[df.enc.dwell$region.f=="Extremely hot"], 
+                weight = df.enc.dwell$factor_sem[df.enc.dwell$region.f=="Extremely hot"],
+                plain.ascii = FALSE, style = "simple", method = "render",
+                headings = FALSE, report.nas = FALSE)
+
+tb.socioc.status.tem <- freq(df.enc.dwell$stat.socio[df.enc.dwell$region.f=="Temperate"], 
+                weight = df.enc.dwell$factor_sem[df.enc.dwell$region.f=="Temperate"],
+                plain.ascii = FALSE, style = "simple", method = "render",
+                headings = FALSE, report.nas = FALSE)
+
+tb.socioc.status.tro <- freq(df.enc.dwell$stat.socio[df.enc.dwell$region.f=="Tropical"], 
+                weight = df.enc.dwell$factor_sem[df.enc.dwell$region.f=="Tropical"],
+                plain.ascii = FALSE, style = "simple", method = "render",
+                headings = FALSE, report.nas = FALSE)
+
+tb.socioc.status <- as.data.frame(tb.socioc.status)
+tb.socioc.status$region <- "Total"
+tb.socioc.status$socioec.status <- row.names(tb.socioc.status)
+tb.socioc.status <- na.omit(tb.socioc.status)
+
+tb.socioc.status.hot<- as.data.frame(tb.socioc.status.hot)
+tb.socioc.status.hot$region <- "Extremely hot"
+tb.socioc.status.hot$socioec.status <- row.names(tb.socioc.status.hot)
+tb.socioc.status.hot <- na.omit(tb.socioc.status.hot)
+
+tb.socioc.status.tem <- as.data.frame(tb.socioc.status.tem)
+tb.socioc.status.tem$region <- "Temperate"
+tb.socioc.status.tem$socioec.status <- row.names(tb.socioc.status.tem)
+tb.socioc.status.tem <- na.omit(tb.socioc.status.tem)
+
+tb.socioc.status.tro <- as.data.frame(tb.socioc.status.tro)
+tb.socioc.status.tro$region <- "Tropical"
+tb.socioc.status.tro$socioec.status <- row.names(tb.socioc.status.tro)
+tb.socioc.status.tro <- na.omit(tb.socioc.status.tro)
+
+tb.socioc.status$percent.valid <-tb.socioc.status$`% Valid`
+tb.socioc.status['low', 'percent.valid']
+```
+
+`r t.ref("tbl_socio_status")` presents the number households classified by socioeconomic status [^1]. According to this categorization 2 in 3 Mexican households are in the middle class category, `r round(tb.socioc.status['low', 'percent.valid'], 2)`% in the low class, and `r round(tb.socioc.status['high', 'percent.valid'], 2)`% in the high class. These national figures are similar to those of the temperate region. Nevertheless, these percentages change considerably in the extremely hot and tropical regions.
+
+[^1] INEGI carried out the socioeconomic classification of households using 24 indicators using with information of the XII General Population Census of 2000. This stratification was made with multivariate statistical methods.
+
+#### All
+```{r tbl-socio-status, , figure_captions("tbl_socio_status", "Socioeconomic status of households represented by ENCEVI")}
+knitr::kable(tb.socioc.status[, c(1,2,3)], 
+             row.names = TRUE,
+             label = 'table-grid', digits = 3, align = 'c', 
+            booktabs = TRUE,
+  caption = paste(t.ref("tbl_socio_status"), 'Socioeconomic status of households represented by ENCEVI')) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", 
+                                       "responsive"),
+                fixed_thead = T, full_width = T, position = "float_right")
+```
+#### Extreme Hot
+```{r tbl-socio-status-hot}
+knitr::kable(tb.socioc.status.hot[, c(1,2,3)], 
+             row.names = TRUE,
+             label = 'table-grid', digits = 3, align = 'c', 
+            booktabs = TRUE,
+  caption = paste(t.ref("tbl_socio_status"), 'Socioeconomic status of households located in extremely hot region')) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", 
+                                       "responsive"),
+                fixed_thead = T, full_width = T, position = "float_right")
+```
+
+#### Temperate
+```{r tbl-socio-status-tem}
+knitr::kable(tb.socioc.status.tem[, c(1,2,3)], 
+             row.names = TRUE,
+             label = 'table-grid', digits = 3, align = 'c', 
+            booktabs = TRUE,
+  caption = paste(t.ref("tbl_socio_status"), 'Socioeconomic status of households located in temperate region')) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", 
+                                       "responsive"),
+                fixed_thead = T, full_width = T, position = "float_right")
+```
+#### Tropical
+```{r tbl-socio-status-tro}
+knitr::kable(tb.socioc.status.tro[, c(1,2,3)], 
+             row.names = TRUE,
+             label = 'table-grid', digits = 3, align = 'c', 
+            booktabs = TRUE,
+  caption = paste(t.ref("tbl_socio_status"), 
+                  'Socioeconomic status of households located in tropical region')) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", 
+                                       "responsive"),
+                fixed_thead = T, full_width = T, position = "float_right")
+```
+## Household Size
+```{r}
+summary(df.enc.dwell$tot_integ)
+
+stat.household.size <- summarytools::descr(df.enc.dwell$tot_integ, 
+      weights = df.enc.dwell$factor_sem, 
+      round.digits = 3,
+      stats = c("mean", "sd", "min", "med", "max", "pct.valid"), 
+      transpose = TRUE)
+
+knitr::kable(stat.household.size, 
+      label = 'table-stats-encevi', digits = 3, align = 'c', booktabs = TRUE,
+  caption = paste(t.ref("tbl_stats_encevi"),
+                  'Summary statistics household size')) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"),
+                fixed_thead = T) %>%
+  scroll_box(width = "100%", height = "300px")
+```
+
+
+```{r}
+tb.household.size <- freq(df.enc.dwell$tot_integ, 
+                weight = df.enc.dwell$factor_sem,
+                plain.ascii = FALSE, style = "simple", method = "render",
+                headings = FALSE, report.nas = FALSE)
+
+knitr::kable(tb.household.size, 
+             row.names = TRUE,
+             label = 'table-household-size', digits = 3, align = 'c', 
+            booktabs = TRUE,
+  caption = paste(t.ref("tbl_household-size"), 
+                  'Household size represented by ENCEVI')) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", 
+                                       "responsive"),
+                fixed_thead = T, full_width = T, position = "float_right")
+```
+
+```{r}
+#HOUSEHOLD SIZE PER CLIMATE ZONE
+summarytools::descr(df.enc.dwell$tot_integ, 
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+
+summarytools::descr(df.enc.dwell$tot_integ[df.enc.dwell$region.f=="Extremely hot"], 
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+
+summarytools::descr(df.enc.dwell$tot_integ[df.enc.dwell$region.f=="Temperate"], 
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+
+summarytools::descr(df.enc.dwell$tot_integ[df.enc.dwell$region.f=="Tropical"], 
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+
+summarytools::descr(df.enc.dwell$tot_integ[df.enc.dwell$region.f=="Extremely hot"], 
+      weights = df.enc.dwell$factor_sem[df.enc.dwell$region.f=="Extremely hot"], 
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "sd", "min", "med", "max", "pct.valid"), 
+      transpose = TRUE)
+
+summarytools::descr(df.enc.dwell$tot_integ[df.enc.dwell$region.f=="Temperate"], 
+      weights = df.enc.dwell$factor_sem[df.enc.dwell$region.f=="Temperate"], 
+      round.digits = 3,
+      stats = c("n.valid", "mean", "sd", "min", "med", "max", "pct.valid"), 
+      transpose = TRUE)
+
+summarytools::descr(df.enc.dwell$tot_integ[df.enc.dwell$region.f=="Tropical"], 
+      weights = df.enc.dwell$factor_sem[df.enc.dwell$region.f=="Tropical"], 
+      round.digits = 3,
+      stats = c("n.valid", "mean", "sd", "min", "med", "max", "pct.valid"), 
+      transpose = TRUE)
+```
+
+
+
+
+
+```{r}
+#HOUSEHOLD SIZE PER CLIMATE ZONE
+summarytools::descr(df.enc.dwell$antigua, 
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+
+summarytools::descr(df.enc.dwell$antigua[df.enc.dwell$region.f=="Extremely hot"], 
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+
+summarytools::descr(df.enc.dwell$antigua[df.enc.dwell$region.f=="Temperate"], 
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+
+summarytools::descr(df.enc.dwell$antigua[df.enc.dwell$region.f=="Tropical"], 
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+
+summarytools::descr(df.enc.dwell$antigua, 
+      weights = df.enc.dwell$factor_sem, 
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "sd", "min", "med", "max", "pct.valid"), 
+      transpose = TRUE)
+
+summarytools::descr(df.enc.dwell$antigua[df.enc.dwell$region.f=="Extremely hot"], 
+      weights = df.enc.dwell$factor_sem[df.enc.dwell$region.f=="Extremely hot"], 
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "sd", "min", "med", "max", "pct.valid"), 
+      transpose = TRUE)
+
+summarytools::descr(df.enc.dwell$antigua[df.enc.dwell$region.f=="Temperate"], 
+      weights = df.enc.dwell$factor_sem[df.enc.dwell$region.f=="Temperate"], 
+      round.digits = 3,
+      stats = c("n.valid", "mean", "sd", "min", "med", "max", "pct.valid"), 
+      transpose = TRUE)
+
+summarytools::descr(df.enc.dwell$antigua[df.enc.dwell$region.f=="Tropical"], 
+      weights = df.enc.dwell$factor_sem[df.enc.dwell$region.f=="Tropical"], 
+      round.digits = 3,
+      stats = c("n.valid", "mean", "sd", "min", "med", "max", "pct.valid"), 
+      transpose = TRUE)
+```
+
+## Main Features of Dwellings
+
+### Dwellings' Size 
+`r t.ref("tbl_dwell_size")` shows the number of dwellings represented by ENCEVI grouped by floor area. As seen, 1 in 3 households live in dwellings with floor areas between 56m^2^ and 100m^2^ (600ft^2^- 1075ft^2^).
+
+```{r tbl-dwell-size, figure_captions("tbl_dwell_size", "Floor area of the dwellings represented by ENCEVI")}
+tb.dwell.size <- freq(df.enc.dwell$dwelling.size, 
+                weight = df.enc.dwell$factor_sem,
+                plain.ascii = F, style = "simple", method = "render",
+                headings = F)
+
+knitr::kable(tb.dwell.size, 
+      label = 'table-grid', digits = 3, align = 'c', booktabs = TRUE,
+  caption = paste( t.ref("tbl_dwell_size"), 'Floor area of the dwellings represented by ENCEVI')) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", 
+                                      "condensed", "responsive"),
+                fixed_thead = T, full_width = F)
+```
+
+
+### Dwellings connected to the grid
+
+In 2017, 33.97 million Mexican households were connected to the electricity network [@national_institute_of_statistics_and_geography_number_2019]. This represents 99.71% of the total number of households that were reported in Mexico in 2017 (34.07 million) [@national_institute_of_statistics_and_geography_encuesta_2018].
+
+```{r}
+#Get dwellings connected to the grid
+df.enc.dwell$grid <- ifelse(df.enc.dwell$electri %in% "1", 1 ,0) 
+#Total dwellings with insulation
+total.dwell.grid <- sum(df.enc.dwell$grid * df.enc.dwell$factor_sem)
+percent.dwell.grid <- 100*total.dwell.grid/sum(df.enc.dwell$factor_sem)
+```
+
+ENCEVI reported that the number of dwellings connected to the grid in 2018 (when the survey was conducted) was `r format(total.dwell.grid, big.mark=",", small.interval=3)`, which corresponds to `r round(percent.dwell.grid,2)`% of the total number of households represented by the survey (See `r t.ref("tbl_grid_region")`). This means that there is a small difference between other INEGI's databases and the results reported by ENCEVI (~1%).
+
+```{r tbl-grid-region, figure_captions("tbl_grid_region", "Dwellings connected to the grid by region")}
+mmc <- svydesign(id=~upm, data=df.enc.dwell, strata=~est_dis, weights=~factor_sem)
+tb.grid.region <- cbind(svytable(~region.f+grid, design = mmc), 
+                        prop.table(svytable(~region.f+grid, design = mmc)))
+tb.grid.region <- as.data.frame(round(tb.grid.region, 4))
+  
+tb.grid.region <- cbind(tb.grid.region[1], tb.grid.region[3], tb.grid.region[2], tb.grid.region[4])
+tb.grid.region <- rbind(tb.grid.region, colSums(tb.grid.region))
+colnames(tb.grid.region)<-c("dwellings (no grid)", "percent (no grid)", 
+                            "dwellings (grid)", "percent (grid)")
+
+tb.rownames <- rownames(tb.grid.region)
+rownames(tb.grid.region) <- replace(tb.rownames, tb.rownames==4, "Total") 
+
+knitr::kable(tb.grid.region, 
+      label = 'table-grid-region', digits = 3, align = 'c', booktabs = TRUE,
+  caption = paste(t.ref("tbl_grid_region"), 'Dwellings connected to the grid by region')) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"),
+                fixed_thead = T)
+```
+
+```{r, eval=FALSE}
+mmc <- svydesign(id=~upm, strata=~est_dis, 
+                 data=df.enc.dwell, weights=~factor_sem)
+
+## Estimating number of dwellings connected to the grid by region
+tb.grid.region <- svyby(~dummy.house, by = ~region.f+grid, mmc, svytotal)
+colnames(tb.grid.region)[colnames(tb.grid.region) == "dummy.house"] <- "dwellings"
+
+tb.grid.region <- merge(tb.grid.region, 
+                        tb.dwell.region[ ,c("region.f", "dummy.house")], 
+                        by="region.f")
+
+colnames(tb.grid.region)[colnames(tb.grid.region)=="dummy.house"] <- "dwellings.region"
+
+tb.grid.region <- transform(tb.grid.region, 
+                    percent.grid = myround(tb.grid.region$dwellings / 
+                                             tb.grid.region$dwellings.region, 3))
+
+tb.grid.region$se <- myround(tb.grid.region$se,3)
+
+##Printing table
+datatable(tb.grid.region, rownames = FALSE,
+  options = list(
+    dom = 't',
+    scrollX = TRUE,
+    fixedColumns = TRUE
+  ))
+```
+
+### Households that Have Businesses at Home
+Finally, in this section we present the number of households that have businesses in their homes and pay commercial electricity prices (`r t.ref("tbl_business_home")` and `r t.ref("tbl_commercial_bill")`). In the following sections, we will treat these households  differently to obtain some statistics and other results.
+
+>There are other factors that will be considered later in the analysis of tariffs, such as users that have a small businesses in their properties
+
+**Households that have businesses at home**
+
+```{r tbl-business-home, figure_captions("tbl_business_home", "Households that have businesses in their homes")}
+df.enc.dwell$local_com.f <- factor(df.enc.dwell$local_com,
+                                levels = c(1, 2),
+                                labels = c("Yes", "No"))
+
+tb.business.home <- freq(df.enc.dwell$local_com.f, 
+                         weight = df.enc.dwell$factor_sem, report.nas = F, 
+                         plain.ascii = F, style = "simple", method = "render",
+                         headings = F, na.rm= T)
+
+knitr::kable(tb.business.home, 
+      label = 'table-business-home', digits = 2, align = 'l', booktabs = T,
+  caption = paste(t.ref("tbl_business_home"), 
+                  'Households that have businesses in their homes'))%>%
+  kable_styling(bootstrap_options = c("striped", "hover", 
+                                      "condensed", "responsive"),
+                fixed_thead = T, full_width = F)
+```
+
+**Households that have businesses at home and pay commercial tariffs**
+```{r tbl-commercial-bill, figure_captions("tbl_commercial_bill", "Households who pay commercial tariffs in their homes")}
+df.enc.dwell$elect_loc.f <- factor(df.enc.dwell$elect_loc,
+                                levels = c(1, 2),
+                                labels = c("Yes", "No"))
+
+tb.commercial.bill <- freq(df.enc.dwell$elect_loc.f, 
+                         weight = df.enc.dwell$factor_sem, report.nas = F, 
+                         plain.ascii = F, style = "simple", method = "render",
+                         headings = F, na.rm= T)
+
+knitr::kable(tb.commercial.bill, 
+      label = 'table-commercial-bill ', digits = 2, align = 'l', booktabs = T,
+  caption = paste(t.ref("tbl_commercial_bill"), 
+                  'Households that have businesses & pay commercial tariffs in their homes') ) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", 
+                                      "condensed", "responsive"),
+                fixed_thead = T, full_width = F)
+```
+
+
+## Appliances Ownership
+cooking
+uso_estufa
+
+uso_refri
+uso_lava
+
+iron:
+uso_plan
+
+entertaining
+uso_tv
+uso_cel
+
+cooling:
+uso_venti
+uso_aire
+
+heater:
+uso_calef
+
+water heater:
+uso_calent
+
+water pump:
+uso_bomba
+**oven**
+```{r}
+df.enc.dwell$uso_estufa[df.enc.dwell$uso_estufa==2] <- 0
+
+freq(df.enc.dwell$uso_estufa, 
+                         weight = df.enc.dwell$factor_sem, report.nas = F, 
+                         plain.ascii = F, style = "simple", method = "render",
+                         headings = F, na.rm= T)
+
+
+summarytools::descr(df.enc.dwell$uso_estufa, 
+                    weight = df.enc.dwell$factor_sem,
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+
+
+summarytools::descr(df.enc.dwell$uso_estufa[df.enc.dwell$region.f=="Extremely hot"], 
+                    weight = df.enc.dwell$factor_sem[df.enc.dwell$region.f=="Extremely hot"],
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+
+summarytools::descr(df.enc.dwell$uso_estufa[df.enc.dwell$region.f=="Temperate"], 
+                    weight = df.enc.dwell$factor_sem[df.enc.dwell$region.f=="Temperate"],
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+
+summarytools::descr(df.enc.dwell$uso_estufa[df.enc.dwell$region.f=="Tropical"], 
+                    weight = df.enc.dwell$factor_sem[df.enc.dwell$region.f=="Tropical"],
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+```
+**washing machine**
+```{r}
+df.enc.dwell$uso_lava[df.enc.dwell$uso_lava==2] <- 0
+
+freq(df.enc.dwell$uso_lava, 
+                         weight = df.enc.dwell$factor_sem, report.nas = F, 
+                         plain.ascii = F, style = "simple", method = "render",
+                         headings = F, na.rm= T)
+
+summarytools::descr(df.enc.dwell$uso_lava, 
+                    weight = df.enc.dwell$factor_sem,
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+
+
+summarytools::descr(df.enc.dwell$uso_lava[df.enc.dwell$region.f=="Extremely hot"], 
+                    weight = df.enc.dwell$factor_sem[df.enc.dwell$region.f=="Extremely hot"],
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+
+summarytools::descr(df.enc.dwell$uso_lava[df.enc.dwell$region.f=="Temperate"], 
+                    weight = df.enc.dwell$factor_sem[df.enc.dwell$region.f=="Temperate"],
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+
+summarytools::descr(df.enc.dwell$uso_lava[df.enc.dwell$region.f=="Tropical"], 
+                    weight = df.enc.dwell$factor_sem[df.enc.dwell$region.f=="Tropical"],
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+```
+
+**TV**
+```{r}
+df.enc.dwell$uso_tv[df.enc.dwell$uso_tv==2] <- 0
+
+freq(df.enc.dwell$uso_tv, 
+                         weight = df.enc.dwell$factor_sem, report.nas = F, 
+                         plain.ascii = F, style = "simple", method = "render",
+                         headings = F, na.rm= T)
+
+summarytools::descr(df.enc.dwell$uso_tv, 
+                    weight = df.enc.dwell$factor_sem,
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+
+
+summarytools::descr(df.enc.dwell$uso_tv[df.enc.dwell$region.f=="Extremely hot"], 
+                    weight = df.enc.dwell$factor_sem[df.enc.dwell$region.f=="Extremely hot"],
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+
+summarytools::descr(df.enc.dwell$uso_tv[df.enc.dwell$region.f=="Temperate"], 
+                    weight = df.enc.dwell$factor_sem[df.enc.dwell$region.f=="Temperate"],
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+
+summarytools::descr(df.enc.dwell$uso_tv[df.enc.dwell$region.f=="Tropical"], 
+                    weight = df.enc.dwell$factor_sem[df.enc.dwell$region.f=="Tropical"],
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+```
+
+**Water heater**
+```{r}
+df.enc.dwell$uso_calent[df.enc.dwell$uso_calent==2] <- 0
+
+freq(df.enc.dwell$uso_calent, 
+                         weight = df.enc.dwell$factor_sem, report.nas = F, 
+                         plain.ascii = F, style = "simple", method = "render",
+                         headings = F, na.rm= T)
+
+summarytools::descr(df.enc.dwell$uso_calent, 
+                    weight = df.enc.dwell$factor_sem,
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+
+
+summarytools::descr(df.enc.dwell$uso_calent[df.enc.dwell$region.f=="Extremely hot"], 
+                    weight = df.enc.dwell$factor_sem[df.enc.dwell$region.f=="Extremely hot"],
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+
+summarytools::descr(df.enc.dwell$uso_calent[df.enc.dwell$region.f=="Temperate"], 
+                    weight = df.enc.dwell$factor_sem[df.enc.dwell$region.f=="Temperate"],
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+
+summarytools::descr(df.enc.dwell$uso_calent[df.enc.dwell$region.f=="Tropical"], 
+                    weight = df.enc.dwell$factor_sem[df.enc.dwell$region.f=="Tropical"],
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+```
+
+**Heater**
+```{r}
+df.enc.dwell$uso_calef[df.enc.dwell$uso_calef==2] <- 0
+
+freq(df.enc.dwell$uso_calef, 
+                         weight = df.enc.dwell$factor_sem, report.nas = F, 
+                         plain.ascii = F, style = "simple", method = "render",
+                         headings = F, na.rm= T)
+
+summarytools::descr(df.enc.dwell$uso_calef, 
+                    weight = df.enc.dwell$factor_sem,
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+
+
+summarytools::descr(df.enc.dwell$uso_calef[df.enc.dwell$region.f=="Extremely hot"], 
+                    weight = df.enc.dwell$factor_sem[df.enc.dwell$region.f=="Extremely hot"],
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+
+summarytools::descr(df.enc.dwell$uso_calef[df.enc.dwell$region.f=="Temperate"], 
+                    weight = df.enc.dwell$factor_sem[df.enc.dwell$region.f=="Temperate"],
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+
+summarytools::descr(df.enc.dwell$uso_calef[df.enc.dwell$region.f=="Tropical"], 
+                    weight = df.enc.dwell$factor_sem[df.enc.dwell$region.f=="Tropical"],
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+```
+
+*Refrigerator*
+
+```{r}
+df.enc.dwell$uso_refri[df.enc.dwell$uso_refri==2] <- 0
+
+freq(df.enc.dwell$uso_refri, 
+                         weight = df.enc.dwell$factor_sem, report.nas = F, 
+                         plain.ascii = F, style = "simple", method = "render",
+                         headings = F, na.rm= T)
+
+
+summarytools::descr(df.enc.dwell$uso_refri, 
+                    weight = df.enc.dwell$factor_sem,
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+
+
+summarytools::descr(df.enc.dwell$uso_refri[df.enc.dwell$region.f=="Extremely hot"], 
+                    weight = df.enc.dwell$factor_sem[df.enc.dwell$region.f=="Extremely hot"],
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+
+summarytools::descr(df.enc.dwell$uso_refri[df.enc.dwell$region.f=="Temperate"], 
+                    weight = df.enc.dwell$factor_sem[df.enc.dwell$region.f=="Temperate"],
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+
+summarytools::descr(df.enc.dwell$uso_refri[df.enc.dwell$region.f=="Tropical"], 
+                    weight = df.enc.dwell$factor_sem[df.enc.dwell$region.f=="Tropical"],
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+```
+
+**Fan**
+```{r}
+df.enc.dwell$uso_venti[df.enc.dwell$uso_venti==2] <- 0
+
+freq(df.enc.dwell$uso_venti, 
+                         weight = df.enc.dwell$factor_sem, report.nas = F, 
+                         plain.ascii = F, style = "simple", method = "render",
+                         headings = F, na.rm= T)
+
+summarytools::descr(df.enc.dwell$uso_venti, 
+                    weight = df.enc.dwell$factor_sem,
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+
+summarytools::descr(df.enc.dwell$uso_venti[df.enc.dwell$region.f=="Extremely hot"], 
+                    weight = df.enc.dwell$factor_sem[df.enc.dwell$region.f=="Extremely hot"],
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+
+summarytools::descr(df.enc.dwell$uso_venti[df.enc.dwell$region.f=="Temperate"], 
+                    weight = df.enc.dwell$factor_sem[df.enc.dwell$region.f=="Temperate"],
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+
+summarytools::descr(df.enc.dwell$uso_venti[df.enc.dwell$region.f=="Tropical"], 
+                    weight = df.enc.dwell$factor_sem[df.enc.dwell$region.f=="Tropical"],
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+```
+
+**AC**
+```{r}
+df.enc.dwell$uso_aire[df.enc.dwell$uso_aire==2] <- 0
+
+freq(df.enc.dwell$uso_aire, 
+                         weight = df.enc.dwell$factor_sem, report.nas = F, 
+                         plain.ascii = F, style = "simple", method = "render",
+                         headings = F, na.rm= T)
+
+summarytools::descr(df.enc.dwell$uso_aire, 
+                    weight = df.enc.dwell$factor_sem,
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+
+summarytools::descr(df.enc.dwell$uso_aire[df.enc.dwell$region.f=="Extremely hot"], 
+                    weight = df.enc.dwell$factor_sem[df.enc.dwell$region.f=="Extremely hot"],
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+
+summarytools::descr(df.enc.dwell$uso_aire[df.enc.dwell$region.f=="Temperate"], 
+                    weight = df.enc.dwell$factor_sem[df.enc.dwell$region.f=="Temperate"],
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+
+summarytools::descr(df.enc.dwell$uso_aire[df.enc.dwell$region.f=="Tropical"], 
+                    weight = df.enc.dwell$factor_sem[df.enc.dwell$region.f=="Tropical"],
+      round.digits = 3,
+      stats = c("n.valid" ,"mean", "med", "pct.valid"), 
+      transpose = TRUE)
+```
+
+
+**Fan or AC**
+```{r}
+df.enc.dwell$ac.or.fan <- df.enc.dwell$uso_aire + df.enc.dwell$uso_venti
+  
+freq(df.enc.dwell$ac.or.fan, 
+     weight = df.enc.dwell$factor_sem, report.nas = F, 
+     plain.ascii = F, style = "simple", method = "render",
+     headings = F, na.rm= T)
+```
+Households with fans or ACs
+```{r}
+11678726 + 3918582.00
+```
+
+Households with AC / Households with fans or AC
+```{r}
+4908985 / 15597308
+```
+
+Households with fans / Households with fans or AC
+```{r}
+14606905 / 15597308
+```
+
+## Storing Results
+Finally we saved the results in a comma separated value file named "encevi_tariff_merged.csv". This file includes the data of the datasets "encevi", "vivienda", and "hogar" -obtained from INEGI-  plus the following information:
+
+1. Dataset of the municipalities (obtained also from INEGI through a personal request made to INEGI- see file municipality_codes_inegi.R).
+2. Dataset of the tariffs per municipality.
+3. The number of days included in the electricity bills that resulted from the calculation explained above.  
+```{r}
+rownames(df.enc.dwell) <- df.enc.dwell$folio
+
+#Remove column
+df.enc.dwell$dummy.house <- NULL
+
+write.csv(df.enc.dwell, "./output/encevi_dwelling_temp.csv", 
+          row.names=TRUE, na="")
+```
+
+# References
