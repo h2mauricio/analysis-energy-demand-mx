@@ -1,24 +1,22 @@
 ###############################################################################
-## This script includes the functions needed to compute the electricity 
-## consumption (in KWh) for each recoreded bill of ENCEVI,s survey
+## This script includes the functions needed to compute the period (in days)
+## included in each electricity bill reported by the households surveyed by ENCEVI
 ###############################################################################
 GetBillPeriodicity <- function (df.bill.date){
-  # Computes the power consumption of each household based on the information
-  # collected from ENCEVI's survey, related to the electricity bill 
-  # (type of tariff, periodicity of bill, and summer month tariff ) 
+  # Computes the number of days included in the electricity bill of each household 
+  #  based on the information collected from ENCEVI's survey.
   #
   # Args:
-  #   df.bill: dataframe with the info of all the households surveyed (only 
-  #            data related to bill)   
-  #   df.tariff.sch: dataframe with schema of the Mexican electricity tariffs 
-  #   periodicity.bill: string used to filter "monthly" or "bi-monthly" bills
-  #   tariff.type: string used to filter the bills by type of tariff
-  #   is.summer: string ("Yes"/"No") used to filter summer or no summer tariffs
+  #   df.bill.date: dataframe with the info of the electricity bill reported by 
+  #               the households surveyed in ENCEVY (only data related to bill)   
   # 
   # Returns:
-  #   df.bill.sub: dataframe with the same data of "df.bill" plus the columns 
-  #               "cons.kwh" (computed power consumption estimation) and 
-  #               "tariff.block" (tariff block based on the Mexican tariff schema)
+  #   df.bill.date: dataframe with the same data of "df.bill.date" plus the column
+  #               "bill.days.valid" (number of days included in the bill, numeric)
+  #               These attributes are also modified:
+  #               "bill.ini.date" (initial date of the bill, date.object)
+  #               "bill.end.date" (end date of the bill, date.object)
+  # 
 
 df.bill.date$bill.ini.date <- NA
 df.bill.date$bill.end.date <- NA
@@ -103,19 +101,8 @@ df.bill.date$bill.days.valid[df.bill.date$bill.days.valid > 75 ] <- NA
 df.bill.date$bill.days.valid[df.bill.date$bill.days.valid >= 45 & 
                                 df.bill.date$bill.days.valid <= 50  ] <- NA
 
-#TODO: Add this subset in the function FillGapFillPeriodicity
-#df.bill.date <- subset(df.bill.date,
-#                        select=-c(mes_inic, inicia, mes_final, final))
-
 return (df.bill.date)
 }
 
-
-
-
-FillGapFillPeriodicity <- function (df.bill.date){
-
-  
-  return (df.bill.date)
-}
-
+#TODO: Add this subset in the function FillGapFillPeriodicity to include the 
+# calculations to fill 
