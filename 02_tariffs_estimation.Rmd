@@ -7,7 +7,7 @@ bibliography: energy_mex.bib
 ---
 
 # Objective
-This section presents the steps performed to compute the daily electricity consumption of the households surveyed by INEGI, based on the total amount paid in their electricity bills^1^. To compute the electricity consumption of each household^2^, we used the dataset that resulted from the [previous section](./01_descr_stats.html). Then, we combined this dataset with several pieces of information that were collected in the survey and with external data regarding the Federal Electricity Commission (CFE) tariffs. Because there are some missing data about how CFE charges some taxes to many of its customers, we were unable to compute an exanct electricity consumption value for each costumer. As a result, we instead we computed three  electricity consumption values for each household: low, medium, and high^3^. 
+This section presents the steps performed to compute the daily electricity consumption of the households surveyed by INEGI (from January 8 to June 29, 2018), based on the total amount paid in their electricity bills^1^. To compute the electricity consumption of each household^2^, we used the dataset that resulted from the [previous section](./01_descr_stats.html). Then, we combined this dataset with several pieces of information that were collected in the survey and with external data regarding the Federal Electricity Commission (CFE) tariffs. Because there are some missing data about how CFE charges some taxes to many of its customers, we were unable to compute the electricity consumption value for each costumer. As a result, we instead we computed three  electricity consumption values for each household: low, medium, and high^3^. 
 
 Estimate the periodicity in which users pay their electricity bill.
 
@@ -23,9 +23,7 @@ Estimate the periodicity in which users pay their electricity bill.
 #Remove all objects from current workspace and call garbage collector
 rm(list=ls())
 gc()
-```
 
-```{r sh, include=FALSE}
 source("./script/general_setup_functions.R")
 source("./script/compute_consumption_bill.R")
 source("./script/get_bill_periodicity.R")
@@ -43,12 +41,10 @@ opts_chunk$set(echo = TRUE,
                fig.path = 'figures/')
 ```
 
-```{r, include=FALSE}
+```{r setup, include=FALSE}
 #Generates the css needed by summarytools
 st_css()
-```
 
-```{r setup, include=FALSE}
 #devtools::install_github("ropensci/plotly")
 knitr::opts_chunk$set(fig.width = 8, collapse = TRUE)
 
@@ -282,6 +278,9 @@ The survey also collected information about how much users had to pay to cover t
 To estimate the electricity consumption of each household surveyed, we started by estimating the number of days that were covered in the electricty bills of the households surveyed. Along these lines, this section shows the steps we followed to clean the data and compute the number of the days billed [@ramirez-camperos_mexican_2013].
 
 ```{r}
+#TODO: eliminate this source statement
+source("./script/get_bill_periodicity.R")
+
 df.enc.dwell$mes_inic1[df.enc.dwell$mes_inic1 == 99] <- NA
 df.enc.dwell$mes_final1[df.enc.dwell$mes_final1 == 99] <- NA
 df.enc.dwell$inicia1[df.enc.dwell$inicia1 == 99] <- NA
@@ -296,6 +295,92 @@ setnames(df.bill.dates,
 
 df.bill.dates <- GetBillPeriodicity (df.bill.dates)
 
+descr(df.bill.dates, stats = c("mean", "sd", "min", "med", "max", "n.valid", "pct.valid"), transpose = TRUE)
+```
+
+stat.kwh.month <- as.data.frame(stat.kwh.month)
+
+knitr::kable(stat.kwh.month, 
+      label = 'table-stats-kwhmonth', digits = 3, align = 'c', booktabs = TRUE,
+  caption = 'Summary statistics of monthly electricity consumption (in KWh)') %>%
+  kable_styling(bootstrap_options = c("striped", "hover", 
+                                      "condensed", "responsive"),
+                fixed_thead = T) %>%
+  scroll_box(width = "100%")
+
+rm(df.bill.temp)
+
+stat.kwh.month$percent.valid <-stat.kwh.month$`% Total`
+
+
+```{r}
+df.bill.dates['num_month_bill'] <- NA
+
+df.bill.dates$year.ini <- as.integer(df.bill.dates$year.ini)
+df.bill.dates$year.end <- as.integer(df.bill.dates$year.end)
+
+FillMonthsGap<-function(month_end, month_ini, days_valid, months_bill){
+  if (!is.na(month_end) & !is.na(month_ini) & (month_end >= month_ini) & is.na(days_valid) ){
+      month_end - month_ini
+  }
+    
+  else if (!is.na(month_end) & !is.na(month_ini) & (month_end < month_ini) & is.na(days_valid)){
+      (12 - month_ini) + month_end
+    }
+  
+  else {
+    months_bill
+  }
+}
+
+
+df.bill.dates$num_month_bill = as.numeric(difftime(df.bill.dates$bill.end.date, 
+                                                   df.bill.dates$bill.ini.date, units ="days"))/(365.25/12)
+
+df.bill.dates$num_month_bill <- mapply(FillMonthsGap, df.bill.dates$mes_final, 
+                                    df.bill.dates$mes_inic, 
+                                    df.bill.dates$bill.days.valid, 
+                                    df.bill.dates$num_month_bill)
+
+
+#Loop to get median value of months in each bill with a monthly period 
+df.bill.dates['bill.days.valid.dummy'] <- NA
+
+for (month in seq(1, 12, 1)) {
+    median_short_month <- median(df.bill.dates$bill.days.valid[df.bill.dates$num_month_bill >= 0.7 & 
+                                                                 df.bill.dates$num_month_bill <= 0.95 & 
+                                                                 df.bill.dates$mes_final == month], na.rm = TRUE)
+    
+    df.bill.dates$bill.days.valid[df.bill.dates$num_month_bill >= 0.7 & 
+                                          df.bill.dates$num_month_bill <= 0.95 & 
+                                          is.na(df.bill.dates$bill.days.valid) & 
+                                          df.bill.dates$mes_final == month ] <- median_short_month
+    
+    
+    median_month <- median(df.bill.dates$bill.days.valid[df.bill.dates$num_month_bill > 0.95 & 
+                                                           df.bill.dates$num_month_bill <= 1.5 & 
+                                                           df.bill.dates$mes_final == month], na.rm = TRUE)
+    
+    df.bill.dates$bill.days.valid[df.bill.dates$num_month_bill > 0.95 & 
+                                          df.bill.dates$num_month_bill <= 1.5 & 
+                                          is.na(df.bill.dates$bill.days.valid) & 
+                                          df.bill.dates$mes_final == month ] <- median_month
+    
+    
+    median_bimonth <- median(df.bill.dates$bill.days.valid[df.bill.dates$num_month_bill > 1.5 & 
+                                                             df.bill.dates$num_month_bill <= 2.5 & 
+                                                             df.bill.dates$mes_final == month], na.rm = TRUE) 
+    
+    df.bill.dates$bill.days.valid[df.bill.dates$num_month_bill > 1.5 & 
+                                          df.bill.dates$num_month_bill <= 2.5 & 
+                                          is.na(df.bill.dates$bill.days.valid) & 
+                                          df.bill.dates$mes_final == month] <- median_bimonth
+}
+
+descr(df.bill.dates, stats = c("mean", "sd", "min", "med", "max", "n.valid", "pct.valid"), transpose = TRUE)
+```
+
+```{r}
 df.enc.dwell <- merge(df.enc.dwell, df.bill.dates, by="folio")
 
 setnames(df.enc.dwell, 
@@ -357,8 +442,8 @@ quantiles <- svyquantile(~bill.days1, svd.dwell, c(.25,.5,.75),ci=TRUE, na.rm=TR
 **Monthly or Bi-mothly Periodicity**
 ```{r}
 df.enc.dwell$bill.period1 <- NULL
-df.enc.dwell$bill.period1[df.enc.dwell$bill.days1.valid <= 35] <- 1
-df.enc.dwell$bill.period1[df.enc.dwell$bill.days1.valid >= 56] <- 2
+df.enc.dwell$bill.period1[df.enc.dwell$bill.days1.valid <= 45] <- 1
+df.enc.dwell$bill.period1[df.enc.dwell$bill.days1.valid >= 50] <- 2
 
 df.enc.dwell$bill.period1 <- factor(df.enc.dwell$bill.period1,
                                levels = c(1, 2),
@@ -411,6 +496,8 @@ setnames(df.enc.dwell,
                "bill.end.date2", "year.ini2", "year.end2"))
 ```
 
+
+
 ```{r table-bill-days2, fig.cap=table_captions("table_bill_days2", "Days included in electricity  bill")}
 tb.stat.bill.days2 <- descr(df.enc.dwell[ ,c("bill.days2", "bill.days2.valid")], 
                          weights = df.enc.dwell$factor_sem,
@@ -435,8 +522,10 @@ tb.stat.bill.days2$percent.valid <-tb.stat.bill.days2$`% Total`
 ```{r}
 ## Getting periodicity of second bill
 df.enc.dwell$bill.period2 <- NULL
-df.enc.dwell$bill.period2[df.enc.dwell$bill.days2.valid <= 35] <- 1
-df.enc.dwell$bill.period2[df.enc.dwell$bill.days2.valid >= 56] <- 2
+
+df.enc.dwell$bill.period2[df.enc.dwell$bill.days1.valid <= 45] <- 1
+df.enc.dwell$bill.period2[df.enc.dwell$bill.days1.valid >= 50] <- 2
+
 
 df.enc.dwell$bill.period2 <- factor(df.enc.dwell$bill.period2,
                                levels = c(1, 2),
@@ -728,10 +817,13 @@ df.bill <- subset(df.enc.dwell,
                             'bill.period1', 'bill.days1.valid', 
                            'bill.amount1', 'tax.dap1', 'tax.dap.min1', 
                            'tax.dap.max1', 'tax.vat1', 'bill.min1.notax', 
-                           'bill.avg1.notax', 'bill.max1.notax'))
+                           'bill.avg1.notax', 'bill.max1.notax',
+                           'inicia1', 'inicia2',
+                           'mes_inic1', 'mes_inic2', 'year.ini1', 'year.ini2',
+                           'year.end1', 'year.end2', 'mes_final1', 'mes_final2'))
 ```
 
-In average, Mexican households paid ... 
+In average, Mexican households paid (`r round(df.enc.dwell$bill.avg1.notax,2)`%)  per bill 
 
 ## Computing Electricity Consumption
 
@@ -1031,7 +1123,7 @@ stat.kwh.month <- as.data.frame(stat.kwh.month)
 
 knitr::kable(stat.kwh.month, 
       label = 'table-stats-kwhmonth', digits = 3, align = 'c', booktabs = TRUE,
-  caption = 'Summary statistics of monthly electricity consumption (in Kwh)') %>%
+  caption = 'Summary statistics of monthly electricity consumption (in KWh)') %>%
   kable_styling(bootstrap_options = c("striped", "hover", 
                                       "condensed", "responsive"),
                 fixed_thead = T) %>%
@@ -1043,28 +1135,28 @@ stat.kwh.month$percent.valid <-stat.kwh.month$`% Total`
 ```
 
 ```{r pl-cons-month-dwell-box, fig.cap="Boxplots Electricity Monthly Consumption", warning = FALSE, results= "hold"}
-pal.bulbs <- c('blue', 'orange', 'red')
-pal.bulbs <- setNames(pal.bulbs, c("low", "med", "high"))
+pal <- c('blue', 'orange', 'red')
+pal <- setNames(pal, c("low", "med", "high"))
 
 pl.cons.month.dwell.box <- plot_ly(type = 'box') %>%
   add_boxplot(y = df.enc.dwell.bill$cons.month.kwh.low1, 
               boxpoints = 'outliers', 
               name = "Low", 
-              color = list(color =pal.bulbs['low']),
-              marker = list(color = pal.bulbs['low']), 
-              line=list(color = pal.bulbs['low']) ) %>%  
+              color = list(color =pal['low']),
+              marker = list(color = pal['low']), 
+              line=list(color = pal['low']) ) %>%  
   add_boxplot(y = df.enc.dwell.bill$cons.month.kwh.med1, 
               boxpoints = 'outliers', 
               name = "Medium", 
-              color = list(color =pal.bulbs['med']),
-              marker = list(color = pal.bulbs['med']), 
-              line=list(color = pal.bulbs['med']) ) %>%
+              color = list(color =pal['med']),
+              marker = list(color = pal['med']), 
+              line=list(color = pal['med']) ) %>%
   add_boxplot(y = df.enc.dwell.bill$cons.month.kwh.hig1, 
               boxpoints = 'outliers', 
               name = "High", 
-              color = list(color =pal.bulbs['high']),
-              marker = list(color = pal.bulbs['high']), 
-              line=list(color = pal.bulbs['high'])) %>%
+              color = list(color =pal['high']),
+              marker = list(color = pal['high']), 
+              line=list(color = pal['high'])) %>%
   layout(title = "Boxplots of Monthly Electricity Consumption per Dwelling (KWh/month)", 
          yaxis = list(range = c(0, 2000)))
 
@@ -1120,7 +1212,7 @@ As shown in `r t.ref("tbl_bill1_days")`, the average monthly electricity consump
 knitr::kable(stat.month.kwh.socioec[order(stat.month.kwh.socioec$mean), ], 
       label = 'table-stats-month.kwh.socioec', digits = 3, 
       align = 'c', booktabs = T, row.names = TRUE,
-      caption = 'Summary statistics of the monthly electricity consumption by socioeconomic status') %>%
+      caption = 'Summary statistics of the monthly electricity consumption by socioeconomic status (KWh)') %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"),
                 fixed_thead = T)
 ```
@@ -1200,7 +1292,7 @@ df.bill <- subset(df.enc.dwell.bill,
                             region.tariff, tariff, region.f, state.f,
                             grid, local_com.f, elect_loc.f, tipo_tarif.f, 
                             bill.ini.date1, bill.end.date1, year.ini1, 
-                            year.end1, bill.days1, bill.days1.valid, 
+                            year.end1, bill.days1, bill.days1.valid, num_month_bill,
                             bill.period1, bill.ini.date2, bill.end.date2, 
                             year.ini2, year.end2, bill.days2, bill.days2.valid,
                             bill.period2, bill.amount1, bill.amount.day1, 
@@ -1259,7 +1351,7 @@ df.enc.dwell <- subset(df.enc.dwell.bill,
                                  region.tariff, tariff, region.f, state.f,
                                  grid, local_com.f, elect_loc.f, tipo_tarif.f, 
                                  bill.ini.date1, bill.end.date1, year.ini1, 
-                                 year.end1, bill.days1, bill.days1.valid, 
+                                 year.end1, bill.days1, bill.days1.valid, num_month_bill,
                                  bill.period1, bill.ini.date2, bill.end.date2, 
                                  year.ini2, year.end2, bill.days2, bill.days2.valid,
                                  bill.period2, bill.amount1, bill.amount.day1, 
@@ -1313,12 +1405,13 @@ df.enc.dwell <- subset(df.enc.dwell.bill,
 #             ))
 ```
 
-``{r, include =FALSE}
+```{r, include =FALSE}
 write.csv(df.bill, "./output/electricity_bill.csv", 
            row.names=TRUE, na="")
- 
+ ○
 write.csv(df.enc.dwell, "./output/encevi_dwelling_merg.csv", 
            row.names=TRUE, na="")
-``
+```
+
 
 # References

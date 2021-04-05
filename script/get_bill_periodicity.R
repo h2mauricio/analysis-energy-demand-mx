@@ -64,11 +64,11 @@ df.bill.date$bill.days <- as.integer((df.bill.date$bill.end.date - df.bill.date$
 # Case 4. If the period in the electricity bill is longer than 1 year, the 
 # initial year is assumed to be 2018
 df.bill.date$year.ini[df.bill.date$bill.days >= 365 & 
-                         (df.bill.date$mes_inic <= df.bill.date$mes_final)] <- 2018
+                         (df.bill.date$mes_inic <= df.bill.date$mes_final)] <- '2018'
 
 # Case 5. If the period in the electricity bill is negative, the initial 
 # year is assumed to be 2017
-df.bill.date$year.ini[df.bill.date$bill.days < 0] <- 2017
+df.bill.date$year.ini[df.bill.date$bill.days < 0] <- '2017'
 
 df.bill.date$bill.end.date <-  str_replace_all(paste(df.bill.date$mes_final, "-", 
                                                       df.bill.date$final, "-", 
@@ -99,12 +99,23 @@ df.bill.date$bill.days.valid <- df.bill.date$bill.days
 
 #Keeping only the bi-monthly (56-64 days) and monthly bills (27-33 days)
 df.bill.date$bill.days.valid[df.bill.date$bill.days.valid < 25 ] <- NA
-df.bill.date$bill.days.valid[df.bill.date$bill.days.valid > 70 ] <- NA
-df.bill.date$bill.days.valid[df.bill.date$bill.days.valid >= 40 & 
+df.bill.date$bill.days.valid[df.bill.date$bill.days.valid > 75 ] <- NA
+df.bill.date$bill.days.valid[df.bill.date$bill.days.valid >= 45 & 
                                 df.bill.date$bill.days.valid <= 50  ] <- NA
 
-df.bill.date <- subset(df.bill.date,
-                        select=-c(mes_inic, inicia, mes_final, final))
+#TODO: Add this subset in the function FillGapFillPeriodicity
+#df.bill.date <- subset(df.bill.date,
+#                        select=-c(mes_inic, inicia, mes_final, final))
 
 return (df.bill.date)
 }
+
+
+
+
+FillGapFillPeriodicity <- function (df.bill.date){
+
+  
+  return (df.bill.date)
+}
+
