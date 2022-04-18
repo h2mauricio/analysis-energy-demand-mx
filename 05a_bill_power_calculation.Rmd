@@ -1,0 +1,191 @@
+---
+title: "Analysis of ENCEVI 2018"
+author: '[Mauricio Hernandez](http://mauricioh2.com)'
+date: "`r Sys.Date()`"
+subtitle: Computing electricity Consumption
+bibliography: energy_mex.bib
+---
+
+
+# Objective
+This section presents the steps performed to compute the daily electricity consumption of the households surveyed by INEGI (from January 8 to June 29, 2018), based on the total amount paid in their electricity bills^1^. To compute the electricity consumption of each household^2^, we used the dataset that resulted from the [previous section](./01_descr_stats.html). Then, we combined this dataset with several pieces of information that were collected in the survey and with external data regarding the Federal Electricity Commission (CFE) tariffs. Because there are some missing data about how CFE charges some taxes to many of its customers, we were unable to compute the electricity consumption value for each costumer. As a result, we instead we computed three  electricity consumption values for each household: low, medium, and high^3^. 
+
+Estimate the periodicity in which users pay their electricity bill.
+
+
+^1^ Although ENCEVI collected some data about the last electricity bill paid by households, it did not collect data about the amount of electricity consumed. So, we had to calculate the electricity consumption.
+
+^2^ We computed the electricity consumption only of the households that provided all the required data from their last electricity bill. For instance, if a household did not provide data about their bill period, its information was not used in this analysis.
+
+^3^ low electricity consumption values are the minimum estimated cost of electricity that a household paid based on their tariff and the minimum tax that could be charged. While, high electricity consumption  values are the maximum estimated cost of electricity based on the same parameters. Finally, the medium electricity consumption is the average of the low and high values.
+
+
+Notes: Dollar Exchange Rate: 	18.70	15-Mar-18
+
+```{r, include=FALSE}
+#Remove all objects from current workspace and call garbage collector
+rm(list=ls())
+gc()
+
+source("./script/general_setup_functions.R")
+source("./script/compute_consumption_bill.R")
+source("./script/get_bill_periodicity.R")
+```
+
+```{r knitr_init, include=FALSE}
+#options(max.print = "75")
+opts_chunk$set(echo = TRUE,
+	             cache = FALSE,
+               prompt = FALSE,
+               tidy = FALSE,
+               comment = NA,
+               message = FALSE,
+               warning = FALSE,
+               fig.path = 'figures/')
+```
+
+```{r setup, include=FALSE}
+#Generates the css needed by summarytools
+st_css()
+
+#devtools::install_github("ropensci/plotly")
+knitr::opts_chunk$set(fig.width = 8, collapse = TRUE)
+
+knitr::knit_hooks$set(output = function(x, options){
+  if(!is.null(options$max_height)){
+    paste('<pre style = "max-height:',
+          options$max_height, 
+          ';float: left; width: 910px; overflow-y: auto;">',
+          x,
+          "</pre>",
+          sep = "")
+  } else{
+    x
+  }
+})
+```
+
+**Loading datasets**
+</br>This dataset was obtained with the "bill_taxes_calcluation.Rmd" file.
+
+```{r}
+tbl.mean.cons.reg <- read.csv("./output/tables/tbl.mean.cons.region.month.with.cfe.csv", header = TRUE, na.strings="")
+
+head(tbl.mean.cons.reg)
+```
+
+
+```{r}
+tbl.mean.cons.reg$region <- factor(tbl.mean.cons.reg$region,
+                     levels = c('Extremely hot', 'Tropical', 'Temperate', 'All'),
+                     labels = c('Extremetely hot', 'Tropical', 'Temperate', 'All'))
+
+tbl.mean.cons.reg$final.month.mod.f <- factor(tbl.mean.cons.reg$final.month.mod.f,
+                     levels = c('Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'),
+                     labels = c('Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'))
+```
+
+
+```{r}
+#theme_set(theme_gray(base_size = 10))
+
+
+#Make Bar Plot
+plot.cons.month <- ggplot(tbl.mean.cons.reg, aes(x = final.month.mod.f, y = mean_cons_month, fill=region)) +
+  geom_bar(stat="identity",position="dodge") + 
+  scale_colour_viridis_d(begin = 0.1, end = 0.9,   option = "plasma", aesthetics = c("fill")) +
+  scale_x_discrete(name= "") +
+  scale_y_continuous(name= "Electricity Consumption [kWh/month]", breaks=c(200, 400, 600, 800, 1000)) +
+  geom_errorbar(position=position_dodge(width=.9), width=.5, color="grey50") + 
+  aes(ymin=mean_cons_month_low, ymax=mean_cons_month_upp) +
+  geom_text(aes(label=round(mean_cons_month, 0)), vjust=2.6, color="black", 
+            position = position_dodge(.9), size=2)
+
+
+plot.cons.month <- plot.cons.month + theme(axis.text.x = element_text(angle = 90, hjust = 1), 
+                        panel.background = element_rect(fill = "white", colour = NA),
+                        panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                colour = "grey92"), plot.title = element_text(hjust = 0.5))  +  
+  labs(title = "Monthly Electricity Consumption per Household by Climatic Region in Mexico - 2018", 
+       caption ="")
+
+plot.cons.month
+
+#ggsave(plot = plot.cons.month, width = 10, height = 6, dpi = 400, 
+#       filename = "./output/fig/elect_cons_perregion_month.png")
+```
+
+
+
+```{r}
+plot.cons.month <- ggplot(tbl.mean.cons.reg, aes(x = final.month.mod.f, y = mean_cons_month, fill=region)) +
+  geom_bar(stat="identity",position="dodge") + 
+  #scale_colour_viridis_d(begin = 0.8, end = 0.2,   option = "plasma", aesthetics = c("fill")) +
+  scale_colour_viridis_d(begin = 0.8, end = 0.2,   option = "magma", aesthetics = c("fill")) +
+  scale_x_discrete(name= "") +
+  ylim(0, 800) +
+  scale_y_continuous(name= "Electricity Consumption [kWh]", breaks=c(200, 400, 600, 800), limits= c(0, 750)) +
+  geom_errorbar(position=position_dodge(width=0.9), width=.5, color="grey") + 
+  aes(ymin=mean_cons_month_low, ymax=mean_cons_month_upp) +
+  geom_text(aes(label=round(mean_cons_month, 0)), vjust=-0.4, color="black", 
+            position = position_dodge(0.9), size=2.5) +
+    facet_wrap(~ source, ncol = 1, scales = "free_y");
+
+plot.cons.month <- plot.cons.month + theme(axis.text.x = element_text(angle = 90, hjust = 1), 
+                        panel.background = element_rect(fill = "white", colour = NA),
+                        panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                colour = "grey92"), plot.title = element_text(hjust = 0.5))  +  
+  labs(title = "Monthly Consumption per Household by Climatic Region in Mexico", 
+       subtitle ="Period: July 2017-June 2018")
+
+plot.cons.month
+
+ggsave(plot = plot.cons.month, width = 10, height = 8, dpi = 400, 
+       filename = "./output/fig/kwh_permonth_month_region_compare.png")
+```
+
+
+
+
+
+
+# Consumption by State
+```{r}
+#df.enc.dwell.bill$state.f
+
+tbl.mean.cons.state <- dstrata %>% 
+  group_by(state.f)  %>%
+  summarize(mean_cons_month = survey_mean(cons.month.kWh.med1, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl.mean.cons.state <- na.omit(tbl.mean.cons.state) 
+colnames(tbl.mean.cons.state)[which(names(tbl.mean.cons.state) == "region.f")] <- "Region"
+# renaming all the column names of data frame
+
+tbl.mean.cons.state
+
+#write.csv(tbl.mean.cons.state,"./output/tables/tbl.mean.cons.state.csv", row.names = TRUE)
+
+#Adding summer period
+
+tbl.mean.cons.state.summer <- dstrata %>% 
+  group_by(state.f, is.summer1)  %>%
+  summarize(mean_cons_month = survey_mean(cons.month.kWh.med1, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl.mean.cons.state.summer <- na.omit(tbl.mean.cons.state.summer) 
+colnames(tbl.mean.cons.state)[which(names(tbl.mean.cons.state.summer) == "region.f")] <- "Region"
+# renaming all the column names of data frame
+
+tbl.mean.cons.state.summer
+write.csv(tbl.mean.cons.state.summer,"./output/tables/tbl.mean.cons.state.summer.csv", row.names = TRUE)
+```
+
+
+## Storing results
+```{r}
+# After merging all the values, we don't need this dataframe 
+rm(df.bill.kWh)
+
+write.csv(df.enc.dwell.bill, "./output/df_bill_wconsump.csv", 
+          row.names = FALSE, na="")
+```     
+          

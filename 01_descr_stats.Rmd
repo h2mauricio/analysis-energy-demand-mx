@@ -218,6 +218,15 @@ knitr::kable(stat.df.enc.dwell[order(row.names(stat.df.enc.dwell)), ],
 
 ## Households Surveyed and Features of Dwellings
 ```{r}
+freq(df.enc.dwell$region.f, 
+               # weight = df.enc.dwell$factor_sem,
+                plain.ascii = FALSE, style = "simple", method = "render",
+                headings = FALSE, report.nas = FALSE)
+
+```
+
+
+```{r}
 # Survey design construction (mmc), this computes the statistical errors
 df.enc.dwell$dummy.house <- 1
 

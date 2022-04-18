@@ -1,0 +1,309 @@
+---
+title: "Analysis of ENCEVI 2018"
+author: '[Mauricio Hernandez](http://mauricioh2.com)'
+date: "`r Sys.Date()`"
+subtitle: Bill Taxes Calculation
+bibliography: energy_mex.bib
+---
+
+# Objective
+This section presents the steps performed to compute the daily electricity consumption of the households surveyed by INEGI (from January 8 to June 29, 2018), based on the total amount paid in their electricity bills^1^. To compute the electricity consumption of each household^2^, we used the dataset that resulted from the [previous section](./01_descr_stats.html). Then, we combined this dataset with several pieces of information that were collected in the survey and with external data regarding the Federal Electricity Commission (CFE) tariffs. Because there are some missing data about how CFE charges some taxes to many of its customers, we were unable to compute the electricity consumption value for each costumer. As a result, we instead we computed three  electricity consumption values for each household: low, medium, and high^3^. 
+
+Estimate the periodicity in which users pay their electricity bill.
+
+
+^1^ Although ENCEVI collected some data about the last electricity bill paid by households, it did not collect data about the amount of electricity consumed. So, we had to calculate the electricity consumption.
+
+^2^ We computed the electricity consumption only of the households that provided all the required data from their last electricity bill. For instance, if a household did not provide data about their bill period, its information was not used in this analysis.
+
+^3^ low electricity consumption values are the minimum estimated cost of electricity that a household paid based on their tariff and the minimum tax that could be charged. While, high electricity consumption  values are the maximum estimated cost of electricity based on the same parameters. Finally, the medium electricity consumption is the average of the low and high values.
+
+
+Notes: Dollar Exchange Rate: 	18.70	15-Mar-18
+
+```{r, include=FALSE}
+#Remove all objects from current workspace and call garbage collector
+rm(list=ls())
+gc()
+
+source("./script/general_setup_functions.R")
+source("./script/compute_consumption_bill.R")
+source("./script/get_bill_periodicity.R")
+```
+
+```{r knitr_init, include=FALSE}
+#options(max.print = "75")
+opts_chunk$set(echo = TRUE,
+	             cache = FALSE,
+               prompt = FALSE,
+               tidy = FALSE,
+               comment = NA,
+               message = FALSE,
+               warning = FALSE,
+               fig.path = 'figures/')
+```
+
+```{r setup, include=FALSE}
+#Generates the css needed by summarytools
+st_css()
+
+#devtools::install_github("ropensci/plotly")
+knitr::opts_chunk$set(fig.width = 8, collapse = TRUE)
+
+knitr::knit_hooks$set(output = function(x, options){
+  if(!is.null(options$max_height)){
+    paste('<pre style = "max-height:',
+          options$max_height, 
+          ';float: left; width: 910px; overflow-y: auto;">',
+          x,
+          "</pre>",
+          sep = "")
+  } else{
+    x
+  }
+})
+```
+
+**Loading datasets**
+</br>This dataset was obtained with the "tariffs_estimation.Rmd" file.
+
+```{r}
+df.dwell.recov <- read.csv("./output/df_dwelling_recover.csv", 
+                           header = TRUE, na.strings="")
+
+df.dap.tax <- read.csv("./input/tariffs_dap_tax.csv", header = TRUE, na.strings="")
+# Remove duplicated rows based on ageem.id
+df.dap.tax <- df.dap.tax[!duplicated(df.dap.tax$ageem.id), ]
+rownames(df.dap.tax) <- df.dap.tax$ageem.id
+```
+
+
+## Total Amount Paid in Each Bill
+To clean the data related to the amount paid in each electricity bill, we discarded the records of bills that have values below the minimum payment as well as the records that have extremely high values.
+```{r, results=FALSE}
+df.dwell.recov$bill.amount1 <- df.dwell.recov$cons_med1
+df.dwell.recov$bill.amount.day1 <- NA
+
+#The minimum payment in a month would be 25 KWh * the minimum rate per KWh (MXN$0.697) + tax (IVA, 16%) =~ MXN$20.00
+df.dwell.recov$bill.amount1[df.dwell.recov$bill.amount1 <= 20.0 ] <- NA
+df.dwell.recov$bill.amount1[df.dwell.recov$bill.amount1 > 49999.0 ] <- NA
+
+summary(df.dwell.recov$bill.amount1)
+```
+
+```{r}
+descr(df.dwell.recov$bill.amount1, 
+      stats = c("mean", "sd", "min", "med", "max", "n.valid", "pct.valid"), 
+      weights = df.dwell.recov$factor_sem,       
+      transpose = TRUE)
+```
+      
+```{r}
+options( survey.lonely.psu = "adjust" )
+
+svd.dwell <- svydesign(id=~upm, strata=~est_dis, 
+                 data=df.dwell.recov, weights=~factor_sem)
+
+## Estimating average billed days
+mean.bill.amount1 <- svymean(~bill.period1+bill.amount1, svd.dwell, na.rm=TRUE)
+var.bill.amount1 <- svyvar(~bill.amount1, svd.dwell, na.rm=TRUE)
+
+mean.bill.amount1
+var.bill.amount1
+```
+      
+```{r tbl-stats-bill-amount, message = FALSE}
+stat.bill.amount.mo <- descr(df.dwell.recov$bill.amount1[df.dwell.recov$bill.period1=="monthly"], 
+                           weights = df.dwell.recov$factor_sem[df.dwell.recov$bill.period1=="monthly"], 
+                           round.digits = 3,
+                           stats = c("n.valid", "mean", "sd", 
+                                     "min", "med", "max", "pct.valid"), 
+                           transpose = TRUE)
+
+stat.bill.amount.bi <- descr(df.dwell.recov$bill.amount1[df.dwell.recov$bill.period1=="bi-monthly"], 
+                           weights = df.dwell.recov$factor_sem[df.dwell.recov$bill.period1=="bi-monthly"], 
+                           round.digits = 3,
+                           stats = c("n.valid","mean", "sd", "min", 
+                                     "med", "max", "pct.valid"), 
+                           transpose = TRUE)
+
+stat.bill.amount <- rbind(stat.bill.amount.mo, stat.bill.amount.bi)
+
+row.names(stat.bill.amount) <- c("monthly", "bi-monthly")
+
+knitr::kable(stat.bill.amount, 
+      label = 'table-stats-bill-amount', digits = 3, 
+      align = 'c', booktabs = TRUE,
+  caption = 'Summary statistics of bill amount ($MXN)') %>%
+  kable_styling(bootstrap_options = c("striped", "hover", 
+                                      "condensed", "responsive"),
+                fixed_thead = T) %>%
+  scroll_box(width = "100%")
+
+write.csv(stat.bill.amount,"./output/tables/stat.bill.amount.csv", row.names = TRUE)
+```
+
+# Estimating Taxes Included in Bills
+
+## Value Added Tax (aka. IVA)**
+
+Each electricity billl in Mexico includes a 16% value added tax, known as IVA. Since 2019, some cities located at Mexico's Northern border pay only 8% VAT. But as the information analyzed here is from 2017- 2018, we don't need to consider this situation.
+```{r}
+df.dwell.recov$tax.vat1 <- df.dwell.recov$bill.amount1 * 0.16
+```
+
+
+**DAP Tax (Public street lighting system tax)**
+
+Information about DAP tax was imported from file _tariffs_dap_tax.csv_. Here, these data is merged with the data from ENCEVI using the variable with the municipalities ids (*ageem.id*).
+
+There are 6 different ways in which the DAP tax is charged:
+
+1. Fixed.
+2. Fixed & Range.
+3. Percentage.
+4. Percentage & Fixed. _(there are not values that use this method in our sample)_
+5. Range.
+6. Range in percent.
+
+```{r, results= "hide"}
+df.dwell.recov.tax <- merge(df.dwell.recov, df.dap.tax, by="ageem.id", all.x = TRUE)
+```
+
+1. If DAP tax is Fix
+```{r, message = FALSE, results= "hide"}
+df.dwell.recov.tax$tax.dap.min1 <- NA
+df.dwell.recov.tax$tax.dap.max1 <- NA
+df.dwell.recov.tax$tax.dap1 <- NA
+
+attach(df.dwell.recov.tax)
+# 1. If the method used to get the DAP tax is Fix, the value of tax.dap, 
+# tax.dap.min, and tax.dap.max are equal to tax.dap.value 
+df.dwell.recov.tax$tax.dap1 <- ifelse(tax.dap.method == "Fix", 
+                                tax.dap.value, tax.dap1)
+df.dwell.recov.tax$tax.dap.min1 <- ifelse(tax.dap.method == "Fix", 
+                                    tax.dap.value, tax.dap.min1)
+df.dwell.recov.tax$tax.dap.max1 <- ifelse(tax.dap.method == "Fix", 
+                                    tax.dap.value, tax.dap.max1)
+detach(df.dwell.recov.tax)
+
+summary(df.dwell.recov.tax$tax.dap1)
+summary(df.dwell.recov.tax$tax.dap.min1)
+summary(df.dwell.recov.tax$tax.dap.max1)
+```
+
+2. If DAP tax is a Percent
+```{r, message = FALSE, results= "hide"}
+# 2. If the method used to get the dap tax is Percent, the value of tax.dap, 
+# tax.dap.min, and tax.dap.max are equal to tax.dap.percent*bill.amount1
+attach(df.dwell.recov.tax)
+df.dwell.recov.tax$tax.dap1 <- ifelse(tax.dap.method == "Percent", 
+                                tax.dap.percent * bill.amount1, tax.dap1)
+df.dwell.recov.tax$tax.dap.min1 <- ifelse(tax.dap.method == "Percent", 
+                                    tax.dap.percent * bill.amount1, tax.dap.min1)
+df.dwell.recov.tax$tax.dap.max1 <- ifelse(tax.dap.method == "Percent", 
+                                    tax.dap.percent * bill.amount1, tax.dap.max1)
+detach(df.dwell.recov.tax)
+
+summary(df.dwell.recov.tax$tax.dap1)
+summary(df.dwell.recov.tax$tax.dap.min1)
+summary(df.dwell.recov.tax$tax.dap.max1)
+```
+
+3. If DAP tax is a range
+```{r, message = FALSE, results= "hide"}
+# 3. If the method used to get the dap tax is Range, the value of tax.dap, 
+# tax.dap.min, and tax.dap.max are equal to tax.dap.method, 
+# tax.dap.min.range, and tax.dap.max.range respectively
+attach(df.dwell.recov.tax)
+df.dwell.recov.tax$tax.dap1 <- ifelse(tax.dap.method == "Range", 
+                                tax.dap.avg.range, tax.dap1)
+df.dwell.recov.tax$tax.dap.min1 <- ifelse(tax.dap.method == "Range", 
+                                    tax.dap.min.range, tax.dap.min1)
+df.dwell.recov.tax$tax.dap.max1 <- ifelse(tax.dap.method == "Range", 
+                                    tax.dap.max.range, tax.dap.max1)
+detach(df.dwell.recov.tax)
+
+summary(df.dwell.recov.tax$tax.dap1)
+summary(df.dwell.recov.tax$tax.dap.min1)
+summary(df.dwell.recov.tax$tax.dap.max1)
+```
+
+
+4. If DAP tax is a Range/Percent
+```{r, message = FALSE, results= "hide"}
+# 4. If the method used to get the dap tax is Range.percent, the value of 
+# tax.dap, tax.dap.min, and tax.dap.max are equal to tax.dap.percent, 
+# tax.dap.min.range, and tax.dap.max.range (times bill.amount1) respectively
+attach(df.dwell.recov.tax)
+df.dwell.recov.tax$tax.dap1 <- ifelse(tax.dap.method == "Range.percent",
+                                tax.dap.percent * bill.amount1, tax.dap1)
+df.dwell.recov.tax$tax.dap.min1 <- ifelse(tax.dap.method == "Range.percent",
+                                    tax.dap.min.range * bill.amount1, tax.dap.min1)
+df.dwell.recov.tax$tax.dap.max1 <- ifelse(tax.dap.method == "Range.percent",
+                                    tax.dap.max.range * bill.amount1, tax.dap.max1)
+detach(df.dwell.recov.tax)
+
+summary(df.dwell.recov.tax$tax.dap1)
+summary(df.dwell.recov.tax$tax.dap.min1)
+summary(df.dwell.recov.tax$tax.dap.max1)
+```
+5. If DAP tax is a  Percent/Fix
+
+```{r, message = FALSE, results= "hide"}
+# 5. If the method used to get the dap tax is Percent&Fix, the value of 
+# tax.dap, and tax.dap.min are equal to the minimum value between 
+# tax.dap.value and tax.dap.percent * bill.amount1). While tax.dap.min 
+# is equal the maximum value  between tax.dap.value and 
+# tax.dap.percent * bill.amount1).
+attach(df.dwell.recov.tax)
+df.dwell.recov.tax$tax.dap.min1 <- ifelse(tax.dap.method == "Percent.fix",
+                                    apply(df.dwell.recov.tax[, c("tax.dap.percent", 
+                                                           "bill.amount1")], 
+                                          1, prod), tax.dap.min1)
+
+df.dwell.recov.tax$tax.dap.max1 <- ifelse(tax.dap.method == "Percent.fix",
+                                    apply(df.dwell.recov.tax[, c("tax.dap.min1", 
+                                                           "tax.dap.value")], 
+                                          1, max), tax.dap.max1)
+
+df.dwell.recov.tax$tax.dap1 <- ifelse(tax.dap.method == "Percent.fix",
+                                    apply(df.dwell.recov.tax[, c("tax.dap.min1", 
+                                                           "tax.dap.value")], 
+                                          1, min), tax.dap1)
+
+df.dwell.recov.tax$tax.dap.min1 <- ifelse(tax.dap.method=="Percent.fix",
+                                    tax.dap1, tax.dap.min1)
+detach(df.dwell.recov.tax)
+
+df.dwell.recov.tax$tax.dap1 <- unlist(df.dwell.recov.tax$tax.dap1)
+
+summary(df.dwell.recov.tax$tax.dap1)
+summary(df.dwell.recov.tax$tax.dap.min1)
+summary(df.dwell.recov.tax$tax.dap.max1)
+```
+**DAC Tax (High consumption tax)**
+
+```{r}
+
+DAC_MONTHLY = 100.0
+DAC_BIMONTHLY = 200.0
+
+df.dwell.recov.tax$tax.dac = NA
+
+#df.dwell.recov.tax$tipo_tarif.f[df.dwell.recov.tax$tipo_tarif.f == "DAC"]
+
+df.dwell.recov.tax$tax.dac <- ifelse(df.dwell.recov.tax$bill.period1=="monthly" &
+                                       df.dwell.recov.tax$tipo_tarif.f == "DAC",
+                                     DAC_MONTHLY, df.dwell.recov.tax$tax.dac)
+
+df.dwell.recov.tax$tax.dac <- ifelse(df.dwell.recov.tax$bill.period1=="bi-monthly" &
+                                       df.dwell.recov.tax$tipo_tarif.f == "DAC",
+                                     DAC_BIMONTHLY, df.dwell.recov.tax$tax.dac)
+```
+
+```{r}
+write.csv(df.dwell.recov.tax,"./output/df_dwelling_recover_wtax.csv", 
+          row.names = FALSE, na="")
+```
+

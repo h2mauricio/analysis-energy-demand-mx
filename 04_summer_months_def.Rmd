@@ -1,0 +1,286 @@
+---
+title: "Analysis of ENCEVI 2018"
+author: '[Mauricio Hernandez](http://mauricioh2.com)'
+date: "`r Sys.Date()`"
+subtitle: Summer Months Definition
+bibliography: energy_mex.bib
+---
+
+
+# Objective
+This section presents the steps performed to compute the daily electricity consumption of the households surveyed by INEGI (from January 8 to June 29, 2018), based on the total amount paid in their electricity bills^1^. To compute the electricity consumption of each household^2^, we used the dataset that resulted from the [previous section](./01_descr_stats.html). Then, we combined this dataset with several pieces of information that were collected in the survey and with external data regarding the Federal Electricity Commission (CFE) tariffs. Because there are some missing data about how CFE charges some taxes to many of its customers, we were unable to compute the electricity consumption value for each costumer. As a result, we instead we computed three  electricity consumption values for each household: low, medium, and high^3^. 
+
+Estimate the periodicity in which users pay their electricity bill.
+
+
+^1^ Although ENCEVI collected some data about the last electricity bill paid by households, it did not collect data about the amount of electricity consumed. So, we had to calculate the electricity consumption.
+
+^2^ We computed the electricity consumption only of the households that provided all the required data from their last electricity bill. For instance, if a household did not provide data about their bill period, its information was not used in this analysis.
+
+^3^ low electricity consumption values are the minimum estimated cost of electricity that a household paid based on their tariff and the minimum tax that could be charged. While, high electricity consumption  values are the maximum estimated cost of electricity based on the same parameters. Finally, the medium electricity consumption is the average of the low and high values.
+
+
+Notes: Dollar Exchange Rate: 	18.70	15-Mar-18
+
+```{r, include=FALSE}
+#Remove all objects from current workspace and call garbage collector
+rm(list=ls())
+gc()
+
+source("./script/general_setup_functions.R")
+source("./script/compute_consumption_bill.R")
+source("./script/get_bill_periodicity.R")
+```
+
+```{r knitr_init, include=FALSE}
+#options(max.print = "75")
+opts_chunk$set(echo = TRUE,
+	             cache = FALSE,
+               prompt = FALSE,
+               tidy = FALSE,
+               comment = NA,
+               message = FALSE,
+               warning = FALSE,
+               fig.path = 'figures/')
+```
+
+```{r setup, include=FALSE}
+#Generates the css needed by summarytools
+st_css()
+
+#devtools::install_github("ropensci/plotly")
+knitr::opts_chunk$set(fig.width = 8, collapse = TRUE)
+
+knitr::knit_hooks$set(output = function(x, options){
+  if(!is.null(options$max_height)){
+    paste('<pre style = "max-height:',
+          options$max_height, 
+          ';float: left; width: 910px; overflow-y: auto;">',
+          x,
+          "</pre>",
+          sep = "")
+  } else{
+    x
+  }
+})
+```
+
+**Loading datasets**
+</br>This dataset was obtained with the "bill_taxes_calcluation.Rmd" file.
+
+```{r}
+
+df.dwell.recov <- read.csv("./output/df_dwelling_recover_wtax.csv", 
+                           header = TRUE, na.strings="")
+
+#Importing data of summer months per region
+df.summer.months <- read.csv("./input/tariffs_summer_months.csv", na.strings="")
+```
+
+
+## Defining Summer Months
+According to the information provided by Federal Electricity Commission (CFE) under the personal request UT/SAIP/1630/19 (June, 18, 2019). The seasonal dates summer months in the residential sector are defined as follows:
+
+- **Baja California**: From the first Sunday of May to the Saturday before the last Sunday of October.
+- **Baja California Sur**: From the first Sunday of April to the Saturday before the last Sunday of October.
+- **National Interconnected System**: From the first Sunday of April to the Saturday before the last Sunday of October.
+
+
+
+```{r}
+head(df.summer.months)
+```
+
+```{r}
+df.dwell.recov$mes_inic1.f <- factor(df.dwell.recov$mes_inic1,
+                               levels = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12),
+                               labels = c("jan", "feb", "mar", "apr", "may", 
+                                          "jun", "jul", "aug", "sep", "oct", 
+                                          "nov", "dec"))
+```
+
+**Frequency Table by Initial Month**
+```{r}
+df.dwell.sub <- subset(df.dwell.recov, bill.days1.valid > 0, select=('mes_inic1.f')) 
+
+freq(as.factor(df.dwell.sub$mes_inic1.f))
+```
+
+```{r tbl-ini-month, figure_captions("tbl_ini_month", "Initial month of bills represented by ENCEVI")}
+tb.ini.month <- freq(df.dwell.recov$mes_inic1.f, 
+                weight = df.dwell.recov$factor_sem,
+                plain.ascii = F, style = "simple", method = "render",
+                headings = F)
+
+knitr::kable(tb.ini.month, 
+      label = 'table-grid', digits = 3, align = 'c', booktabs = TRUE,
+  caption = paste( t.ref("tbl_dwell_size"), 'Initial month of bills represented by ENCEVI')) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", 
+                                      "condensed", "responsive"),
+                fixed_thead = T, full_width = F)
+```
+
+
+```{r}
+# Merging values by tariff region
+df.dwell.summer <- merge(df.dwell.recov, df.summer.months, 
+                         by="region.tariff", all.x =TRUE)
+```
+
+
+```{r}
+descr(df.dwell.summer$mes_inic1, 
+      stats = c("mean", "sd", "min", "med", "max", "n.valid", "pct.valid"), 
+      transpose = TRUE)
+
+descr(df.dwell.summer$mes_final1, 
+      stats = c("mean", "sd", "min", "med", "max", "n.valid", "pct.valid"), 
+      transpose = TRUE)
+```
+##Bills that have summer tariffs##
+
+
+**Bills that have summer tariffs -  with weighting factors**
+```{r tbl-bill-issummer, results="hold"}
+AssignSummerMonths<-function(month_end, month_ini, days_valid, summer_end, summer_ini){
+
+  if(!is.na(days_valid) & !is.na(month_ini) & !is.na(month_end) & !is.na(summer_ini) & !is.na(summer_end)) {
+    if((month_ini >= summer_ini) & ((month_end - 2) <= summer_end) & (month_ini <= month_end)){
+      TRUE
+    }
+    else
+      FALSE
+  }
+    
+  else if(!is.na(days_valid)){
+      FALSE
+    }
+  
+  else {
+    NA
+  }
+}
+
+df.dwell.summer$is.summer1 <- NA
+
+df.dwell.summer$is.summer1 <- mapply(AssignSummerMonths, df.dwell.summer$mes_final1, 
+                                    df.dwell.summer$mes_inic1, 
+                                    df.dwell.summer$bill.days1.valid,
+                                    df.dwell.summer$summer.end.month,
+                                    df.dwell.summer$summer.start.month)
+
+df.dwell.summer$is.summer1[df.dwell.summer$is.summer1==TRUE] <- 1
+df.dwell.summer$is.summer1[df.dwell.summer$is.summer1==FALSE] <- 2
+
+df.dwell.summer$is.summer1 <- factor(df.dwell.summer$is.summer1,
+                                levels = c(1, 2, 3),
+                                labels = c("Yes", "No", "Other"))
+
+tb.bill.is.summer <- freq(df.dwell.summer$is.summer1, 
+                         weight = df.dwell.summer$factor_sem, report.nas = F, 
+                         plain.ascii = F, style = "simple", method = "render",
+                         headings = F, na.rm= T)
+
+knitr::kable(tb.bill.is.summer, 
+      label = 'table-bill-issummer', digits = 2, align = 'l', booktabs = T,
+  caption = 'Bills that have summer tariffs') %>%
+  kable_styling(bootstrap_options = c("striped", "hover", 
+                                      "condensed", "responsive"),
+                fixed_thead = T, full_width = F)
+
+tb.bill.is.summer <- as.data.frame(tb.bill.is.summer)
+
+colnames(tb.bill.is.summer)[colnames(tb.bill.is.summer)=="% Valid"] <- "valid.percent"
+write.csv(tb.bill.is.summer,"./output/tables/tb.bill.is.summer.csv", row.names = TRUE)
+```
+**Responders with summer bills by climatic region**
+```{r}
+#freq(df.dwell.summer$is.summer1,  report.nas = F, 
+#     plain.ascii = F, style = "simple", method = "render", headings = F, na.rm= T)
+
+
+mytable <- xtabs(~region.f+is.summer1, data=df.dwell.summer, addNA = TRUE,
+      na.action = NULL)
+ftable(mytable)
+
+```
+**Households represented by survey with summer bills by climatic region**
+
+
+# Other is NA
+```{r}
+options(survey.lonely.psu = "adjust")
+
+df.dwell.summer.sub <- subset(df.dwell.summer, select= c(upm, est_dis, factor_sem, is.summer1, region.f))
+df.dwell.summer.sub$is.summer[is.na(df.dwell.summer.sub$is.summer)] <- "Other" 
+
+df.dwell.summer.sub[is.na(df.dwell.summer.sub)] <- "Other"
+#df.dwell.summer.sub <- na.omit(df.dwell.summer.sub) 
+
+mmc <- svydesign(id=~upm, strata=~est_dis, 
+                 data=df.dwell.summer.sub, weights=~factor_sem)
+
+## Estimating number of dwellings connected to the grid by region
+tb.summer.region <- svyby(~is.summer1, by = ~region.f, mmc, svytotal, vartype=c("se","ci"))
+
+#tb.summer.region <- myround(tb.summer.region,3)
+
+#colnames(tb.grid.region)[colnames(tb.grid.region) == "dummy.house"] <- "dwellings"
+
+##Printing table
+datatable(tb.summer.region, rownames = FALSE,
+  options = list(
+    dom = 't',
+    scrollX = TRUE,
+    fixedColumns = TRUE
+  ))
+```
+
+
+```{r}
+options(survey.lonely.psu = "adjust")
+
+df.dwell.summer.sub <- subset(df.dwell.summer, select= c(upm, est_dis, factor_sem))
+df.dwell.summer.sub$dummy <- 1
+
+mmc <- svydesign(id=~upm, strata=~est_dis, 
+                 data=df.dwell.summer.sub, weights=~factor_sem)
+
+## Estimating number of dwellings connected to the grid by region
+tb.dummy <- svytotal(~dummy, mmc, na.rm=FALSE, vartype=c("ci"))
+
+
+tb.dummy
+
+```
+
+                                 
+- Only  (`r round(tb.bill.is.summer$valid.percent[1],2)`%) of the households represented by the ENCEVI's survey had bills with summer tariffs.\
+```{r}
+# Just for debugging and validation
+df.test <- subset(df.dwell.summer,
+                        select=c('folio', 'is.summer1', 'mes_inic1', 
+                                 'mes_final1', 'year.ini1', 'year.end1',
+                                 'summer.start.month', 'summer.end.month', 
+                                 'bill.days1.valid'))
+
+datatable(df.test[order(-df.test$mes_inic1),], 
+          rownames = FALSE,
+          options = list(
+            #dom = 'tip',
+            scrollX = TRUE,
+            fixedColumns = TRUE
+            ))
+```
+
+## Store results
+```{r}
+df.dwell.summer <- subset(df.dwell.summer, 
+                             select=-c(X.1, X.2, X))
+
+colnames(df.dwell.summer)[colnames(df.dwell.summer)=="region.tariff.f.x"] <- "region.tariff.abbr"
+colnames(df.dwell.summer)[colnames(df.dwell.summer)=="region.tariff.f.y"] <- "region.tariff.id"
+
+write.csv(df.dwell.summer, "./output/df_dwelling_tax_summer.csv", 
+          row.names = FALSE, na="")
+``` 

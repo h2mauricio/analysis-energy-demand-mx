@@ -1,0 +1,834 @@
+---
+title: "Analysis of ENCEVI 2018"
+author: '[Mauricio Hernandez](http://mauricioh2.com)'
+date: "`r Sys.Date()`"
+subtitle: Computing electricity Consumption
+bibliography: energy_mex.bib
+---
+
+
+# Objective
+This section presents the steps performed to compute the daily electricity consumption of the households surveyed by INEGI (from January 8 to June 29, 2018), based on the total amount paid in their electricity bills^1^. To compute the electricity consumption of each household^2^, we used the dataset that resulted from the [previous section](./01_descr_stats.html). Then, we combined this dataset with several pieces of information that were collected in the survey and with external data regarding the Federal Electricity Commission (CFE) tariffs. Because there are some missing data about how CFE charges some taxes to many of its customers, we were unable to compute the electricity consumption value for each costumer. As a result, we instead we computed three  electricity consumption values for each household: low, medium, and high^3^. 
+
+Estimate the periodicity in which users pay their electricity bill.
+
+
+^1^ Although ENCEVI collected some data about the last electricity bill paid by households, it did not collect data about the amount of electricity consumed. So, we had to calculate the electricity consumption.
+
+^2^ We computed the electricity consumption only of the households that provided all the required data from their last electricity bill. For instance, if a household did not provide data about their bill period, its information was not used in this analysis.
+
+^3^ low electricity consumption values are the minimum estimated cost of electricity that a household paid based on their tariff and the minimum tax that could be charged. While, high electricity consumption  values are the maximum estimated cost of electricity based on the same parameters. Finally, the medium electricity consumption is the average of the low and high values.
+
+
+Notes: Dollar Exchange Rate: 	18.70	15-Mar-18
+
+```{r, include=FALSE}
+#Remove all objects from current workspace and call garbage collector
+rm(list=ls())
+gc()
+
+source("./script/general_setup_functions.R")
+source("./script/compute_consumption_bill.R")
+source("./script/get_bill_periodicity.R")
+```
+
+```{r knitr_init, include=FALSE}
+#options(max.print = "75")
+opts_chunk$set(echo = TRUE,
+	             cache = FALSE,
+               prompt = FALSE,
+               tidy = FALSE,
+               comment = NA,
+               message = FALSE,
+               warning = FALSE,
+               fig.path = 'figures/')
+```
+
+```{r setup, include=FALSE}
+#Generates the css needed by summarytools
+st_css()
+
+#devtools::install_github("ropensci/plotly")
+knitr::opts_chunk$set(fig.width = 8, collapse = TRUE)
+
+knitr::knit_hooks$set(output = function(x, options){
+  if(!is.null(options$max_height)){
+    paste('<pre style = "max-height:',
+          options$max_height, 
+          ';float: left; width: 910px; overflow-y: auto;">',
+          x,
+          "</pre>",
+          sep = "")
+  } else{
+    x
+  }
+})
+```
+
+**Loading datasets**
+</br>This dataset was obtained with the "bill_taxes_calcluation.Rmd" file.
+
+```{r}
+df.enc.dwell <- read.csv("./output/df_dwelling_tax_summer.csv", 
+                           header = TRUE, na.strings="")
+
+#tariffs rate structure
+df.tariff.cost <- read.csv("./input/tariffs_rate_structure.csv", header = TRUE, na.strings="")
+```
+
+
+
+***Computing amount paid for electricity*** 
+Total bill amount minus taxes and fees
+```{r}
+#Calculating amount paid for electricity without taxes
+df.enc.dwell$bill.max1.notax <- df.enc.dwell$bill.amount1 - rowSums(df.enc.dwell[,c("tax.dap.min1", "tax.vat1", "tax.dac")], na.rm=TRUE)
+df.enc.dwell$bill.avg1.notax <- df.enc.dwell$bill.amount1 - rowSums(df.enc.dwell[,c("tax.dap1", "tax.vat1", "tax.dac")], na.rm=TRUE)
+df.enc.dwell$bill.min1.notax <- df.enc.dwell$bill.amount1 - rowSums(df.enc.dwell[,c("tax.dap.max1", "tax.vat1", "tax.dac")], na.rm=TRUE)
+
+df.enc.dwell$bill.min1.notax[df.enc.dwell$bill.min1.notax <= 0] <- NA
+df.enc.dwell$bill.avg1.notax[df.enc.dwell$bill.avg1.notax <= 0] <- NA
+df.enc.dwell$bill.max1.notax[df.enc.dwell$bill.max1.notax <= 0] <- NA
+```
+
+
+```{r}
+#day recovered was added manually
+df.bill <- subset(df.enc.dwell, 
+                  select=c('folio', 'foliohog', 'tipo_viv', 'ageem.id', 'tam_loc', 
+                           'est_socio', 'est_dis', 'upm', 'factor_sem',	
+                           'region', 'state.id', 'electri',	'local_com', 
+                           'elect_loc',	'cons_med1',	'cons_med2',	'inicia1',	
+                           'mes_inic1',	'final1', 'mes_final1', 'inicia2',
+                           'mes_inic2',	'final2', 'mes_final2', 'tipo_tarif',
+                           'tariff', 'region.f', 'state.f',	 'stat.socio',
+                           'dwelling.size', 'grid', 'local_com.f',
+                           'elect_loc.f', 'tipo_tarif.f', 'tariff.merge',
+                           'num_month_bill', 'bill.ini.date1', 'bill.end.date1',
+                           'year.ini1', 'year.end1', 'bill.days1', 
+                           'bill.days1.valid', 'num_month_bill.1', 'bill.period1', 
+                           'bill.amount1', 'bill.amount.day1', 'tax.vat1', 'state', 
+                           'municipality', 'tax.dap.min.range', 'tax.dap.max.range', 
+                           'tax.dap.avg.range', 'tax.dap.method', 'tax.dap.percent', 
+                           'tax.dap.value', 'tax.dap.min1', 'tax.dap.max1', 
+                           'tax.dap1', 'tax.dac', 'mes_inic1.f', 'region.tariff',	
+                           'region.tariff.id','summer.start.month',  'summer.end.month',
+                           'is.summer1', 'bill.min1.notax', 'bill.avg1.notax', 
+                           'bill.max1.notax', 'day.recovered'))
+```
+
+In average, Mexican households paid (`r round(df.enc.dwell$bill.avg1.notax,2)`%)  per bill 
+
+
+
+
+## Computing Electricity Consumption
+
+```{r tbl-tariff-struct}
+knitr::kable(df.tariff.cost[ , 1:8], 
+      label = 'table-tariff-struct', digits = 2, align = 'l', booktabs = T,
+  caption = 'Residential tariffs structure') %>%
+  kable_styling(bootstrap_options = c("striped", "hover", 
+                                      "condensed", "responsive"),
+                fixed_thead = T, full_width = F) %>%
+  scroll_box(width = "100%", height = "300px")
+
+
+write.csv(df.tariff.cost[ , 1:8],"./output/tables/tariff_cost.csv", row.names = TRUE)
+```
+
+**Low Consumption Values**
+```{r, results="hide"}
+df.bill$tariff.block <- NA
+df.bill$cons.kWh <- NA
+df.bill$cons.kWh.low1 <- NA
+
+# Obtaining minimum values
+df.bill$bill.notax <- df.bill$bill.min1.notax
+
+summer.bills = "No"
+bill.periodicity = "monthly"
+tariffs <- c("1", "1A", "1B", "1C", "1D", "1E", "1F")
+
+df.bill.tmp <- NA  
+df.bill.kWh <- NA
+
+for (tariff in tariffs) {
+  df.bill.tmp <- EstimateBillConsumptionKWh(df.bill, df.tariff.cost, 
+                                            bill.periodicity, tariff, 
+                                            summer.bills)
+  if (!is.na(df.bill.kWh)){
+    df.bill.kWh <- rbind(df.bill.kWh, df.bill.tmp) 
+  }else{
+    df.bill.kWh <- df.bill.tmp
+  }
+}
+
+summer.bills = "Yes"
+bill.periodicity = "monthly"
+for (tariff in tariffs) {
+  df.bill.tmp <- EstimateBillConsumptionKWh(df.bill, df.tariff.cost, 
+                                            bill.periodicity, tariff, 
+                                            summer.bills)
+  df.bill.kWh <- rbind(df.bill.kWh, df.bill.tmp) 
+}
+
+summer.bills = "No"
+bill.periodicity = "bi-monthly"
+for (tariff in tariffs) {
+  df.bill.tmp <- EstimateBillConsumptionKWh(df.bill, df.tariff.cost, 
+                                            bill.periodicity, tariff, 
+                                            summer.bills)
+  df.bill.kWh <- rbind(df.bill.kWh, df.bill.tmp) 
+}
+
+summer.bills = "Yes"
+bill.periodicity = "bi-monthly"
+
+for (tariff in tariffs) {
+  df.bill.tmp <- EstimateBillConsumptionKWh(df.bill, df.tariff.cost, 
+                                            bill.periodicity, tariff, 
+                                            summer.bills)
+  df.bill.kWh <- rbind(df.bill.kWh, df.bill.tmp) 
+}
+
+df.bill.kWh$cons.kWh.low1 <- df.bill.kWh$cons.kwh
+```
+
+
+
+```{r}
+datatable(df.bill.kWh[order(df.bill.kWh$tipo_tarif),], 
+          rownames = FALSE,
+          options = list(
+            #dom = 'tip',
+            scrollX = TRUE,
+            fixedColumns = TRUE
+            ))
+```
+
+
+**Merging datasets bill info and tariffs to assign low-consumption tariff block**
+```{r}
+df.enc.dwell.bill <- NA
+colnames(df.bill.kWh)[colnames(df.bill.kWh)=="tariff.block"] <- "tariff.block.low1"
+
+df.bill.kWh <- df.bill.kWh[order(df.bill.kWh$folio),]
+df.enc.dwell <- df.enc.dwell[order(df.enc.dwell$folio),]
+
+df.enc.dwell.bill <- merge(x = df.enc.dwell, 
+                           y = df.bill.kWh[ , c("folio", "tariff.block.low1", "cons.kWh.low1")], 
+                           by = "folio", all.x=TRUE)
+
+df.enc.dwell.bill$tariff.block.low1 <- as.numeric(as.character(df.enc.dwell.bill$tariff.block.low1))
+
+descr(df.enc.dwell.bill$tariff.block.low1)
+```
+
+
+**High Consumption Values**
+```{r}
+df.bill$tariff.block <- NA
+df.bill$cons.kwh <- NA
+
+df.bill$cons.kWh.hig1 <- NA
+
+#obtaining maximum values
+df.bill$bill.notax <- df.bill$bill.max1.notax
+
+summer.bills = "No"
+bill.periodicity = "monthly"
+tariffs <- c("1", "1A", "1B", "1C", "1D", "1E", "1F")
+
+df.bill.tmp <- NA  
+df.bill.kWh <- NA
+
+for (tariff in tariffs) {
+  df.bill.tmp <- EstimateBillConsumptionKWh(df.bill, df.tariff.cost, 
+                                            bill.periodicity, tariff, 
+                                            summer.bills)
+  if (!is.na(df.bill.kWh)){
+    df.bill.kWh <- rbind(df.bill.kWh, df.bill.tmp) 
+  }else{
+    df.bill.kWh <- df.bill.tmp
+  }
+}
+
+summer.bills = "Yes"
+bill.periodicity = "monthly"
+for (tariff in tariffs) {
+  df.bill.tmp <- EstimateBillConsumptionKWh(df.bill, df.tariff.cost, 
+                                            bill.periodicity, tariff, 
+                                            summer.bills)
+  df.bill.kWh <- rbind(df.bill.kWh, df.bill.tmp) 
+}
+
+summer.bills = "No"
+bill.periodicity = "bi-monthly"
+for (tariff in tariffs) {
+  df.bill.tmp <- EstimateBillConsumptionKWh(df.bill, df.tariff.cost, 
+                                            bill.periodicity, tariff, 
+                                            summer.bills)
+  df.bill.kWh <- rbind(df.bill.kWh, df.bill.tmp) 
+}
+
+summer.bills = "Yes"
+bill.periodicity = "bi-monthly"
+for (tariff in tariffs) {
+  df.bill.tmp <- EstimateBillConsumptionKWh(df.bill, df.tariff.cost, 
+                                            bill.periodicity, tariff, 
+                                            summer.bills)
+  df.bill.kWh <- rbind(df.bill.kWh, df.bill.tmp) 
+}
+
+#remove auxiliary dataframe
+rm(df.bill.tmp)
+
+df.bill.kWh$cons.kWh.hig1 <- df.bill.kWh$cons.kwh
+```
+
+```{r, results="hide"}
+datatable(df.bill.kWh[order(df.bill.kWh$tipo_tarif),], 
+          rownames = FALSE,
+          options = list(
+            #dom = 'tip',
+            scrollX = TRUE,
+            fixedColumns = TRUE
+            ))
+```
+
+**Merging datasets bill info and tariffs to assign high-consumption tariff block**
+
+```{r}
+colnames(df.bill.kWh)[colnames(df.bill.kWh)=="tariff.block"] <- "tariff.block.hig1"
+
+df.bill.kWh <- df.bill.kWh[order(df.bill.kWh$folio),]
+df.enc.dwell.bill <- df.enc.dwell.bill[order(df.enc.dwell.bill$folio),]
+
+df.enc.dwell.bill <- merge(x = df.enc.dwell.bill, 
+                           y = df.bill.kWh[ , c("folio", "tariff.block.hig1", "cons.kWh.hig1")], 
+                           by = "folio", all.x=TRUE)
+
+df.enc.dwell.bill$cons.kWh.hig1 <- as.numeric(as.character(df.enc.dwell.bill$cons.kWh.hig1))
+
+descr(df.enc.dwell.bill$cons.kWh.hig1)
+```
+
+**Medium Consumption Values**
+```{r, warning = FALSE, results="hide"}
+df.bill$tariff.block <- NA
+df.bill$cons.kWh <- NA
+df.bill$cons.kWh.med1 <- NA
+
+#obtaining medium values
+df.bill$bill.notax <- df.bill$bill.avg1.notax
+
+summer.bills = "No"
+bill.periodicity = "monthly"
+tariffs <- c("1", "1A", "1B", "1C", "1D", "1E", "1F")
+
+df.bill.tmp <- NA  
+df.bill.kWh <- NA
+
+for (tariff in tariffs) {
+  df.bill.tmp <- EstimateBillConsumptionKWh(df.bill, df.tariff.cost, 
+                                            bill.periodicity, tariff, 
+                                            summer.bills)
+  if (!is.na(df.bill.kWh)){
+    df.bill.kWh <- rbind(df.bill.kWh, df.bill.tmp) 
+  }else{
+    df.bill.kWh <- df.bill.tmp
+  }
+}
+
+summer.bills = "Yes"
+bill.periodicity = "monthly"
+for (tariff in tariffs) {
+  df.bill.tmp <- EstimateBillConsumptionKWh(df.bill, df.tariff.cost, 
+                                            bill.periodicity, tariff, 
+                                            summer.bills)
+  df.bill.kWh <- rbind(df.bill.kWh, df.bill.tmp) 
+}
+
+summer.bills = "No"
+bill.periodicity = "bi-monthly"
+for (tariff in tariffs) {
+  df.bill.tmp <- EstimateBillConsumptionKWh(df.bill, df.tariff.cost, 
+                                            bill.periodicity, tariff, 
+                                            summer.bills)
+  df.bill.kWh <- rbind(df.bill.kWh, df.bill.tmp) 
+}
+
+summer.bills = "Yes"
+bill.periodicity = "bi-monthly"
+for (tariff in tariffs) {
+  df.bill.tmp <- EstimateBillConsumptionKWh(df.bill, df.tariff.cost, 
+                                            bill.periodicity, tariff, 
+                                            summer.bills)
+  df.bill.kWh <- rbind(df.bill.kWh, df.bill.tmp) 
+}
+
+df.bill.kWh$cons.kWh.med1 <- df.bill.kWh$cons.kwh
+
+rm(df.bill.tmp)
+```
+
+**Merging datasets to include avg. consumption**
+```{r}
+colnames(df.bill.kWh)[colnames(df.bill.kWh)=="tariff.block"] <- "tariff.block.med1"
+
+df.bill.kWh <- df.bill.kWh[order(df.bill.kWh$folio),]
+df.enc.dwell.bill <- df.enc.dwell.bill[order(df.enc.dwell.bill$folio),]
+
+df.enc.dwell.bill <- merge(x = df.enc.dwell.bill, 
+                           y = df.bill.kWh[ , c("folio", "tariff.block.med1", "cons.kWh.med1")], 
+                           by = "folio", all.x=TRUE)
+
+df.enc.dwell.bill$cons.kWh.med1 <- as.numeric(as.character(df.enc.dwell.bill$cons.kWh.med1))
+
+head(df.enc.dwell.bill$cons.kWh.med1)
+```
+
+```{r}
+# Only values above 25kWh are considered as valid, as CFE charges their consumers
+# 25kWh per bill, even if the consumption is zero. So any bill with a charge 
+# below 25 kWh doesn't seem correct.
+df.enc.dwell.bill$cons.kWh.low1[df.enc.dwell.bill$cons.kWh.low1 <= 25.00] <- NA
+df.enc.dwell.bill$cons.kWh.med1[df.enc.dwell.bill$cons.kWh.med1 <= 25.00] <- NA
+df.enc.dwell.bill$cons.kWh.hig1[df.enc.dwell.bill$cons.kWh.hig1 <= 25.00] <- NA
+```
+
+
+
+## Electricity Consumption Results
+### Daily Electricity Consumption
+```{r}
+df.enc.dwell.bill$cons.day.kWh.low1 <- df.enc.dwell.bill$cons.kWh.low1 / 
+  df.enc.dwell.bill$bill.days1.valid
+
+df.enc.dwell.bill$cons.day.kWh.med1 <- df.enc.dwell.bill$cons.kWh.med1 / 
+  df.enc.dwell.bill$bill.days1.valid
+
+df.enc.dwell.bill$cons.day.kWh.hig1 <- df.enc.dwell.bill$cons.kWh.hig1 / 
+  df.enc.dwell.bill$bill.days1.valid
+
+df.enc.dwell.bill$cons.month.kWh.low1 <- df.enc.dwell.bill$cons.day.kWh.low1 * 30
+df.enc.dwell.bill$cons.month.kWh.med1 <- df.enc.dwell.bill$cons.day.kWh.med1 * 30
+df.enc.dwell.bill$cons.month.kWh.hig1 <- df.enc.dwell.bill$cons.day.kWh.hig1 * 30
+```
+
+
+```{r tbl-stats-kWhday, results="hold"}
+df.bill.temp <- subset(df.enc.dwell.bill,
+                        select=c('cons.day.kWh.low1', 'cons.day.kWh.med1', 
+                                 'cons.day.kWh.hig1', 'factor_sem'))
+
+stat.kWh.day <- descr(df.bill.temp, 
+                           weights = df.bill.temp$factor_sem, 
+                           round.digits = 3,
+                           stats = c("mean", "sd", "min", 
+                                     "med", "max", "pct.valid"), 
+                           transpose = TRUE)
+
+knitr::kable(stat.kWh.day, 
+      label = 'table-stats-kWhday', digits = 3, align = 'c', booktabs = TRUE,
+  caption = 'Summary statistics of daily electricity consumption (in kWh)') %>%
+  kable_styling(bootstrap_options = c("striped", "hover", 
+                                      "condensed", "responsive"),
+                fixed_thead = T) %>%
+  scroll_box(width = "100%")
+
+rm(df.bill.temp)
+```
+
+
+```{r}
+options( survey.lonely.psu = "adjust" )
+
+svd.dwell.bill <- svydesign(id=~upm, strata=~est_dis, 
+                 data=df.enc.dwell.bill, weights=~factor_sem)
+
+## Estimating average billed days
+mean.cons.day <- svymean(~cons.day.kWh.med1, svd.dwell.bill, na.rm=TRUE)
+var.cons.day <- svyvar(~cons.day.kWh.med1, svd.dwell.bill, na.rm=TRUE)
+
+mean.cons.day
+var.cons.day
+```
+
+```{r}
+options( survey.lonely.psu = "adjust" )
+
+## Estimating average billed days
+mean.cons.month <- svymean(~cons.month.kWh.med1, svd.dwell.bill, na.rm=TRUE)
+var.cons.month <- svyvar(~cons.month.kWh.med1, svd.dwell.bill, na.rm=TRUE)
+
+mean.cons.month
+var.cons.month
+```
+
+```{r}
+dstrata <- df.enc.dwell.bill %>%
+  as_survey_design(id = upm, strata = est_dis, weights = factor_sem) 
+
+tbl.mean.cons <- dstrata %>%
+  summarize(mean_cons_month = survey_mean(cons.month.kWh.med1, na.rm= TRUE, vartype = c("se"))) 
+
+tbl.mean.cons
+```
+
+### Monthly Electricity Consumption in kWh
+```{r tbl-stats-kWh-month, results="hold"}
+df.bill.temp <- subset(df.enc.dwell.bill,
+                        select=c('cons.month.kWh.low1', 'cons.month.kWh.med1', 
+                                 'cons.month.kWh.hig1', 'factor_sem'))
+
+stat.kWh.month <- descr(df.bill.temp, 
+                           weights = df.bill.temp$factor_sem, 
+                           round.digits = 3,
+                           stats = c("mean", "sd", "min", 
+                                     "med", "max", "pct.valid"), 
+                           transpose = TRUE)
+
+stat.kWh.month <- as.data.frame(stat.kWh.month)
+
+knitr::kable(stat.kWh.month, 
+      label = 'table-stats-kWhmonth', digits = 3, align = 'c', booktabs = TRUE,
+  caption = 'Summary statistics of monthly electricity consumption (in kWh)') %>%
+  kable_styling(bootstrap_options = c("striped", "hover", 
+                                      "condensed", "responsive"),
+                fixed_thead = T) %>%
+  scroll_box(width = "100%")
+
+rm(df.bill.temp)
+
+stat.kWh.month$percent.valid <-stat.kWh.month$`% Total`
+```
+
+```{r pl-cons-month-dwell-box, fig.cap="Boxplots Electricity Monthly Consumption", warning = FALSE, results= "hold"}
+pal <- c('blue', 'orange', 'red')
+pal <- setNames(pal, c("low", "med", "high"))
+
+pl.cons.month.dwell.box <- plot_ly(type = 'box') %>%
+  add_boxplot(y = df.enc.dwell.bill$cons.month.kWh.low1, 
+              boxpoints = 'outliers', 
+              name = "Low", 
+              color = list(color =pal['low']),
+              marker = list(color = pal['low']), 
+              line=list(color = pal['low']) ) %>%  
+  add_boxplot(y = df.enc.dwell.bill$cons.month.kWh.med1, 
+              boxpoints = 'outliers', 
+              name = "Medium", 
+              color = list(color =pal['med']),
+              marker = list(color = pal['med']), 
+              line=list(color = pal['med']) ) %>%
+  add_boxplot(y = df.enc.dwell.bill$cons.month.kWh.hig1, 
+              boxpoints = 'outliers', 
+              name = "High", 
+              color = list(color =pal['high']),
+              marker = list(color = pal['high']), 
+              line=list(color = pal['high'])) %>%
+  layout(title = "Boxplots of Monthly Electricity Consumption per Dwelling (kWh/month)", 
+         yaxis = list(range = c(0, 2000)))
+
+pl.cons.month.dwell.box
+
+plotly_IMAGE(pl.cons.month.dwell.box, format = "png", 
+             out_file = "./output/fig/box_elect_cons_month.png")
+```
+
+```{r}
+myplt <- plot_ly(x = df.enc.dwell.bill$cons.month.kWh.med1,
+               type = "histogram",
+               histnorm = "probability") %>%
+      #add_trace(x = fit$x, y = fit$y, yaxis = "y2", name = "Density") %>%
+    layout(title = 'Monthly Electricity Consumption per Dwelling',
+           xaxis = list(title = "kWh/month", range = c(0, 1000)), 
+           yaxis = list(title = "Probability", range = c(0, 0.25)),
+           legend = list(title = "month")
+           #yaxis2 = list(overlaying = "y", side = "right")
+           #annotations = a
+           )
+myplt
+
+plotly_IMAGE(myplt, format = "png", 
+             out_file = "./output/fig/hist_elect_cons_month.png")
+```
+
+The main statistics and the data distribution of the three estimations (low, medium, and low) of electricity consumption, show a very small difference between them. So, we decided to use only the "medium" estimation for the rest of the analysis. This variable is the one that give us more data available r round(stat.kWh.month[c('cons.month.kWh.med1'), c('percent.valid')], 2)%.
+
+```{r plt-elect-month-cons, fig.cap="Electricity Monthly Consumption", warning = FALSE, results= "hold"}
+pl.elect..month.cons <- plot_ly(x = df.enc.dwell.bill$cons.month.kWh.med1,
+             type = "histogram")%>%
+  layout(title = 'Electricity Monthly Consumption per Dwelling',
+         xaxis = list(title = "kWh", range = c(0, 1500)), 
+         yaxis = list(title = "Frequency"))
+
+pl.elect..month.cons
+
+plotly_IMAGE(pl.elect..month.cons, format = "png", 
+             out_file = "./output/fig/hist_elect_cons_month.png")
+```
+
+
+```{r, include=FALSE}
+# just to debug code
+summary(df.enc.dwell.bill$cons.day.kWh.low1)
+summary(df.enc.dwell.bill$cons.day.kWh.med1)
+summary(df.enc.dwell.bill$cons.day.kWh.hig1)
+
+summary(df.enc.dwell.bill$cons.month.kWh.low1)
+summary(df.enc.dwell.bill$cons.month.kWh.med1)
+summary(df.enc.dwell.bill$cons.month.kWh.hig1)
+```
+
+### Consumption by Socioeconomic Status
+
+```{r}
+stat.month.kWh.socioec <- psych::describeBy(df.enc.dwell.bill$cons.month.kWh.med1, 
+                  df.enc.dwell.bill$stat.socio, na.rm=T, 
+                  mat=TRUE)
+
+stat.month.kWh.socioec <- as.data.frame(stat.month.kWh.socioec)
+row.names(stat.month.kWh.socioec) <- stat.month.kWh.socioec$group1
+drop <- c('item', 'vars', 'group1', 'mad', 'trimmed')
+
+stat.month.kWh.socioec <- stat.month.kWh.socioec[ , !(names(stat.month.kWh.socioec) 
+                                                      %in% drop)]
+```
+
+
+As shown in `r t.ref("tbl_bill1_days")`, the average monthly electricity consumption of households increases as their socioeconomic status increases. Households of high socioeconomic status, in average consume almost double electricity (`r round(stat.month.kWh.socioec[c('high'), c('mean')],2)` kWh/month) than households with low socioeconomic status (`r round(stat.month.kWh.socioec[c('low'), c('mean')],2)` kWh/month). 
+
+```{r tbl-stats-month.kWh.socioec, }
+knitr::kable(stat.month.kWh.socioec[order(stat.month.kWh.socioec$mean), ], 
+      label = 'table-stats-month.kWh.socioec', digits = 3, 
+      align = 'c', booktabs = T, row.names = TRUE,
+      caption = 'Summary statistics of the monthly electricity consumption by socioeconomic status (kWh)') %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"),
+                fixed_thead = T)
+```
+
+
+
+```{r}
+confint(mean.cons.month)
+```
+
+```{r}
+library(srvyr)
+#svyby(~cons.month.kWh.med1, ~stat.socio, svd.dwell.bill, svymean)
+#svymean(~interaction(cons.month.kWh.med1, stat.socio), design=svd.dwell.bill)
+
+#svd.dwell.bill <- svydesign(id=~upm, strata=~est_dis, 
+#                 data=df.enc.dwell.bill, weights=~factor_sem)
+
+df.enc.dwell.bill$final.month.mod <- df.enc.dwell.bill$mes_inic1 + 1
+
+df.enc.dwell.bill$final.month.mod[df.enc.dwell.bill$final.month.mod==13] <- 1
+
+df.enc.dwell.bill$mes_inic1.f <- factor(df.enc.dwell.bill$mes_inic1,
+                               levels = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12),
+                               labels = c("Jan", "Feb", "Mar", "Apr", "May", 
+                                          "Jun", "Jul", "Aug", "Sep", "Oct", 
+                                          "Nov", "Dec"))
+
+df.enc.dwell.bill$final.month.mod.f <- factor(df.enc.dwell.bill$final.month.mod,
+                               levels = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12),
+                               labels = c("Jan", "Feb", "Mar", "Apr", "May", 
+                                          "Jun", "Jul", "Aug", "Sep", "Oct", 
+                                          "Nov", "Dec"))
+
+df.enc.dwell.bill$mes_final1.f <- factor(df.enc.dwell.bill$mes_final1,
+                               levels = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12),
+                               labels = c("Jan", "Feb", "Mar", "Apr", "May", 
+                                          "Jun", "Jul", "Aug", "Sep", "Oct", 
+                                          "Nov", "Dec"))
+
+#Socioeconomic status
+df.enc.dwell.bill$SES <- factor(df.enc.dwell.bill$est_socio,
+                               levels = c(1, 2, 3, 4),
+                               labels = c('Low', 'Mid-Low', 'Mid-High', 'High', 'All'))
+```
+
+
+```{r}
+# Create survey design
+dstrata <- df.enc.dwell.bill %>%
+  as_survey_design(id = upm, strata = est_dis, weights = factor_sem) 
+```
+
+**Get average values by month**
+```{r}
+tbl.mean.cons.month <- dstrata %>% 
+  group_by(final.month.mod.f)  %>%
+  summarize(mean_cons_month = survey_mean(cons.month.kWh.med1, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl.mean.cons.month <- na.omit(tbl.mean.cons.month) 
+#%>%   rename(c('socioec status'= 'stat.socio'))
+
+tbl.mean.cons.month['SES'] = 'All'
+tbl.mean.cons.month
+```
+
+
+
+
+```{r}
+tbl.mean.cons.ses <- dstrata %>% 
+  group_by(SES, final.month.mod.f)  %>%
+  summarize(mean_cons_month = survey_mean(cons.month.kWh.med1, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl.mean.cons.ses <- na.omit(tbl.mean.cons.ses) 
+#%>%   rename(c('socioec status'= 'stat.socio'))
+
+tbl.mean.cons.ses$SES <- as.character(tbl.mean.cons.ses$SES)
+
+tbl.mean.cons.ses
+```
+
+```{r}
+
+tbl.mean.cons.ses <- rbind(tbl.mean.cons.ses, tbl.mean.cons.month)
+
+tbl.mean.cons.ses$SES <- factor(tbl.mean.cons.comb$SES,
+                               levels = c('Low', 'Mid-Low', 'Mid-High', 'High', 'All'),
+                               labels = c('Low', 'Mid-Low', 'Mid-High', 'High', 'All'))
+
+write.csv(tbl.mean.cons.ses,"./output/tables/tbl.mean.cons.ses.month.csv", row.names = TRUE)
+tbl.mean.cons.ses
+```
+
+#Consumption by SES
+```{r}
+#theme_set(theme_gray(base_size = 10))
+
+#Make Bar Plot
+plot.cons.month <- ggplot(tbl.mean.cons.ses, aes(x = final.month.mod.f, y = mean_cons_month, fill=SES)) +
+  geom_bar(stat="identity",position="dodge") + 
+  scale_colour_viridis_d(begin = 0.1, end = 0.9,   option = "plasma", aesthetics = c("fill")) +
+  scale_x_discrete(name= "") +
+  scale_y_continuous(name= "Electricity Consumption [kWh/month]", breaks=c(200, 400, 600, 800, 1000)) +
+  geom_errorbar(position=position_dodge(width=.9), width=.5, color="grey50") + 
+  aes(ymin=mean_cons_month_low, ymax=mean_cons_month_upp) +
+  geom_text(aes(label=round(mean_cons_month, 0)), vjust=2.6, color="black", 
+            position = position_dodge(.9), size=2)
+
+
+plot.cons.month <- plot.cons.month + theme(axis.text.x = element_text(angle = 90, hjust = 1), 
+                        panel.background = element_rect(fill = "white", colour = NA),
+                        panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                colour = "grey92"), plot.title = element_text(hjust = 0.5))  +  
+  labs(title = "Monthly Electricity Consumption per Household by SES in Mexico - 2018", 
+       caption ="")
+
+plot.cons.month
+
+ggsave(plot = plot.cons.month, width = 12, height = 6, dpi = 400, 
+       filename = "./output/fig/elect_cons_permonth.png")
+```
+
+
+# Consumption by Climatic Region
+
+```{r}
+#Climatic Region
+tbl.mean.cons.reg.all <- dstrata %>% 
+  group_by(region.f)  %>%
+  summarize(mean_cons_month = survey_mean(cons.month.kWh.med1, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl.mean.cons.reg.all <- na.omit(tbl.mean.cons.reg.all) 
+colnames(tbl.mean.cons.reg.all)[which(names(tbl.mean.cons.reg.all) == "region.f")] <- "Region"
+# renaming all the column names of data frame
+
+tbl.mean.cons.reg.all
+```
+
+```{r}
+#Climatic Region
+tbl.mean.cons.reg <- dstrata %>% 
+  group_by(region.f, final.month.mod.f)  %>%
+  summarize(mean_cons_month = survey_mean(cons.month.kWh.med1, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl.mean.cons.reg <- na.omit(tbl.mean.cons.reg) 
+colnames(tbl.mean.cons.reg)[which(names(tbl.mean.cons.reg) == "region.f")] <- "Region"
+# renaming all the column names of data frame
+
+tbl.mean.cons.reg
+
+write.csv(tbl.mean.cons.reg,"./output/tables/tbl.mean.cons.region.month.csv", row.names = TRUE)
+
+```
+
+
+```{r}
+#theme_set(theme_gray(base_size = 10))
+
+#Make Bar Plot
+plot.cons.month <- ggplot(tbl.mean.cons.reg, aes(x = final.month.mod.f, y = mean_cons_month, fill=Region)) +
+  geom_bar(stat="identity",position="dodge") + 
+  scale_colour_viridis_d(begin = 0.1, end = 0.9,   option = "plasma", aesthetics = c("fill")) +
+  scale_x_discrete(name= "") +
+  scale_y_continuous(name= "Electricity Consumption [kWh/month]", breaks=c(200, 400, 600, 800, 1000)) +
+  geom_errorbar(position=position_dodge(width=.9), width=.5, color="grey50") + 
+  aes(ymin=mean_cons_month_low, ymax=mean_cons_month_upp) +
+  geom_text(aes(label=round(mean_cons_month, 0)), vjust=2.6, color="black", 
+            position = position_dodge(.9), size=2)
+
+
+plot.cons.month <- plot.cons.month + theme(axis.text.x = element_text(angle = 90, hjust = 1), 
+                        panel.background = element_rect(fill = "white", colour = NA),
+                        panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                colour = "grey92"), plot.title = element_text(hjust = 0.5))  +  
+  labs(title = "Monthly Electricity Consumption per Household by Climatic Region in Mexico - 2018", 
+       caption ="")
+
+plot.cons.month
+
+ggsave(plot = plot.cons.month, width = 10, height = 6, dpi = 400, 
+       filename = "./output/fig/elect_cons_perregion_month.png")
+```
+# Consumption by State
+```{r}
+#df.enc.dwell.bill$state.f
+
+tbl.mean.cons.state <- dstrata %>% 
+  group_by(state.f)  %>%
+  summarize(mean_cons_month = survey_mean(cons.month.kWh.med1, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl.mean.cons.state <- na.omit(tbl.mean.cons.state) 
+colnames(tbl.mean.cons.state)[which(names(tbl.mean.cons.state) == "region.f")] <- "Region"
+# renaming all the column names of data frame
+
+tbl.mean.cons.state
+
+#write.csv(tbl.mean.cons.state,"./output/tables/tbl.mean.cons.state.csv", row.names = TRUE)
+
+#Adding summer period
+
+tbl.mean.cons.state.summer <- dstrata %>% 
+  group_by(state.f, is.summer1)  %>%
+  summarize(mean_cons_month = survey_mean(cons.month.kWh.med1, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl.mean.cons.state.summer <- na.omit(tbl.mean.cons.state.summer) 
+colnames(tbl.mean.cons.state)[which(names(tbl.mean.cons.state.summer) == "region.f")] <- "Region"
+# renaming all the column names of data frame
+
+tbl.mean.cons.state.summer
+write.csv(tbl.mean.cons.state.summer,"./output/tables/tbl.mean.cons.state.summer.csv", row.names = TRUE)
+```
+
+
+#Con
+
+
+
+## Storing results
+```{r}
+# After merging all the values, we don't need this dataframe 
+rm(df.bill.kWh)
+
+write.csv(df.enc.dwell.bill, "./output/df_bill_wconsump.csv", 
+          row.names = FALSE, na="")
+```     
+          

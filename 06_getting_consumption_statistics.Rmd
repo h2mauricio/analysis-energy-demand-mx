@@ -1,0 +1,387 @@
+---
+title: "Analysis of ENCEVI 2018"
+author: '[Mauricio Hernandez](http://mauricioh2.com)'
+date: "`r Sys.Date()`"
+subtitle: Getting Consumption Statistics
+bibliography: energy_mex.bib
+---
+
+
+
+
+```{r, include=FALSE}
+#Remove all objects from current workspace and call garbage collector
+rm(list=ls())
+gc()
+
+source("./script/general_setup_functions.R")
+source("./script/compute_consumption_bill.R")
+source("./script/get_bill_periodicity.R")
+```
+
+Notes: Dollar Exchange Rate: 	18.70	15-Mar-18
+```{r}
+DOLLAR_TO_MXN <- 18.70
+```
+
+```{r knitr_init, include=FALSE}
+#options(max.print = "75")
+opts_chunk$set(echo = TRUE,
+	             cache = FALSE,
+               prompt = FALSE,
+               tidy = FALSE,
+               comment = NA,
+               message = FALSE,
+               warning = FALSE,
+               fig.path = 'figures/')
+```
+
+```{r setup, include=FALSE}
+#Generates the css needed by summarytools
+st_css()
+
+#devtools::install_github("ropensci/plotly")
+knitr::opts_chunk$set(fig.width = 8, collapse = TRUE)
+
+knitr::knit_hooks$set(output = function(x, options){
+  if(!is.null(options$max_height)){
+    paste('<pre style = "max-height:',
+          options$max_height, 
+          ';float: left; width: 910px; overflow-y: auto;">',
+          x,
+          "</pre>",
+          sep = "")
+  } else{
+    x
+  }
+})
+```
+
+**Loading datasets**
+</br>This dataset was obtained with the "05_bill_power_calculation.Rmd" file.
+```{r}
+df.bill.cons <- read.csv("./output/df_bill_wconsump.csv", 
+                           header = TRUE, na.strings="")
+```
+
+
+##Calculating statistics of data that didn't have to be recovered
+**Monthly consumption by region and summer period, data that hasn't been recovered**
+```{r, results="hold"}
+df.bill.cons.temp <- subset(df.bill.cons, df.bill.cons$day.recovered == 0) %>%
+#  group_by(bill.period1, mes_inic1.f) %>% 
+  group_by(is.summer1, region.f) %>% 
+  summarize(Min = min(cons.month.kWh.med1, na.rm=TRUE),
+    q1 = quantile(cons.month.kWh.med1, 0.25, na.rm=TRUE),
+    Median=median(cons.month.kWh.med1, na.rm=TRUE),
+    Mean=mean(cons.month.kWh.med1, na.rm=TRUE),
+    q3 = quantile(cons.month.kWh.med1, 0.75, na.rm=TRUE),
+    Max = max(cons.month.kWh.med1, na.rm=TRUE),
+    sd=sd(bill.amount1, na.rm=TRUE),
+    n = sum(!is.na(cons.month.kWh.med1)),
+    NAs = sum(is.na(cons.month.kWh.med1))
+    )
+
+df.bill.cons.temp
+
+write.csv(df.bill.cons.temp, "./output/TEMP_bill_cons_summer_NOrecov.csv", 
+          row.names = FALSE, na="")
+```
+**Monthly electricity consumption by region and summer period, data that was recovered**
+```{r, results="hold"}
+df.bill.cons.temp <- subset(df.bill.cons, df.bill.cons$day.recovered == 1) %>%
+#  group_by(bill.period1, mes_inic1.f) %>% 
+  group_by(is.summer1, region.f) %>% 
+  summarize(Min = min(cons.month.kWh.med1, na.rm=TRUE),
+    q1 = quantile(cons.month.kWh.med1, 0.25, na.rm=TRUE),
+    Median=median(cons.month.kWh.med1, na.rm=TRUE),
+    Mean=mean(cons.month.kWh.med1, na.rm=TRUE),
+    q3 = quantile(cons.month.kWh.med1, 0.75, na.rm=TRUE),
+    Max = max(cons.month.kWh.med1, na.rm=TRUE),
+    sd=sd(bill.amount1, na.rm=TRUE),
+    n = sum(!is.na(cons.month.kWh.med1)),
+    NAs = sum(is.na(cons.month.kWh.med1))
+    )
+
+df.bill.cons.temp
+
+write.csv(df.bill.cons.temp, "./output/TEMP_bill_cons_summer_recov.csv", 
+          row.names = FALSE, na="")  
+```
+
+**Monthly electricity consumption by region and summer period, for all the valid data (data that was recovered and that didn't have to be recovered)**
+```{r, results="hold"}
+df.bill.cons.temp <- subset(df.bill.cons) %>%
+#  group_by(bill.period1, mes_inic1.f) %>% 
+  group_by(is.summer1, region.f) %>% 
+  summarize(Min = min(cons.month.kWh.med1, na.rm=TRUE),
+    q1 = quantile(cons.month.kWh.med1, 0.25, na.rm=TRUE),
+    Median=median(cons.month.kWh.med1, na.rm=TRUE),
+    Mean=mean(cons.month.kWh.med1, na.rm=TRUE),
+    q3 = quantile(cons.month.kWh.med1, 0.75, na.rm=TRUE),
+    Max = max(cons.month.kWh.med1, na.rm=TRUE),
+    sd=sd(bill.amount1, na.rm=TRUE),
+    n = sum(!is.na(cons.month.kWh.med1)),
+    NAs = sum(is.na(cons.month.kWh.med1))
+    )
+
+df.bill.cons.temp
+
+write.csv(df.bill.cons.temp, "./output/TEMP_bill_cons_summer_all.csv", 
+          row.names = FALSE, na="")  
+```
+
+## Payments per KWh after taxes
+
+Price per Kwh 
+```{r}
+df.bill.cons$price.kWh.med1 <- df.bill.cons$bill.amount1 / df.bill.cons$cons.kWh.med1
+```
+
+**Amount of MXN$ paid by KWh by region, data that didn't have to be recovered**
+```{r, results="hold"}
+df.bill.cons.temp <- subset(df.bill.cons, df.bill.cons$day.recovered == 0) %>%
+  group_by(is.summer1, region.f) %>% 
+  summarize(Min = min(price.kWh.med1, na.rm=TRUE),
+    q1 = quantile(price.kWh.med1, 0.25, na.rm=TRUE),
+    Median=median(price.kWh.med1, na.rm=TRUE),
+    Mean=mean(price.kWh.med1, na.rm=TRUE),
+    q3 = quantile(price.kWh.med1, 0.75, na.rm=TRUE),
+    Max = max(price.kWh.med1, na.rm=TRUE),
+    sd=sd(price.kWh.med1, na.rm=TRUE),
+    n = sum(!is.na(price.kWh.med1)),
+    NAs = sum(is.na(price.kWh.med1))
+    )
+
+df.bill.cons.temp
+
+write.csv(df.bill.cons.temp, "./output/SUM_Bill_pricekwh_summer_NOrecov.csv", 
+          row.names = FALSE, na="")
+```
+
+
+**Amount of MXN$ paid by KWh by region, data that was recovered**
+```{r, results="hold"}
+df.bill.cons.temp <- subset(df.bill.cons, df.bill.cons$day.recovered == 1) %>%
+  group_by(is.summer1, region.f) %>% 
+  summarize(Min = min(price.kWh.med1, na.rm=TRUE),
+    q1 = quantile(price.kWh.med1, 0.25, na.rm=TRUE),
+    Median=median(price.kWh.med1, na.rm=TRUE),
+    Mean=mean(price.kWh.med1, na.rm=TRUE),
+    q3 = quantile(price.kWh.med1, 0.75, na.rm=TRUE),
+    Max = max(price.kWh.med1, na.rm=TRUE),
+    sd=sd(price.kWh.med1, na.rm=TRUE),
+    n = sum(!is.na(price.kWh.med1)),
+    NAs = sum(is.na(price.kWh.med1))
+    )
+
+df.bill.cons.temp
+
+write.csv(df.bill.cons.temp, "./output/SUM_bill_pricekwh_summer_recov.csv", 
+          row.names = FALSE, na="")
+```
+
+**Amount of MXN$ paid by KWh by region, data that was recovered**
+```{r, results="hold"}
+df.bill.cons.temp <- subset(df.bill.cons) %>%
+  group_by(is.summer1, region.f) %>% 
+  summarize(Min = min(price.kWh.med1, na.rm=TRUE),
+    q1 = quantile(price.kWh.med1, 0.25, na.rm=TRUE),
+    Median=median(price.kWh.med1, na.rm=TRUE),
+    Mean=mean(price.kWh.med1, na.rm=TRUE),
+    q3 = quantile(price.kWh.med1, 0.75, na.rm=TRUE),
+    Max = max(price.kWh.med1, na.rm=TRUE),
+    sd=sd(price.kWh.med1, na.rm=TRUE),  
+    n = sum(!is.na(price.kWh.med1)),
+    NAs = sum(is.na(price.kWh.med1))
+    )
+
+df.bill.cons.temp
+
+write.csv(df.bill.cons.temp, "./output/SUM_bill_pricekwh_summer_all.csv",
+          row.names = FALSE, na="")
+```    
+          
+
+## Payments per KWh before taxes
+
+```{r}
+df.bill.cons$price.kWh.notax.med1 <- df.bill.cons$bill.avg1.notax / df.bill.cons$cons.kWh.med1
+```
+
+
+**Amount of MXN$ paid by KWh by region (before taxes), data that didn't have to be recovered**
+```{r, results="hold"}
+df.bill.cons.temp <- subset(df.bill.cons, df.bill.cons$day.recovered == 0) %>%
+  group_by(is.summer1, region.f) %>% 
+  summarize(Min = min(price.kWh.notax.med1, na.rm=TRUE),
+    q1 = quantile(price.kWh.notax.med1, 0.25, na.rm=TRUE),
+    Median=median(price.kWh.notax.med1, na.rm=TRUE),
+    Mean=mean(price.kWh.notax.med1, na.rm=TRUE),
+    q3 = quantile(price.kWh.notax.med1, 0.75, na.rm=TRUE),
+    Max = max(price.kWh.notax.med1, na.rm=TRUE),
+    sd=sd(price.kWh.notax.med1, na.rm=TRUE),
+    n = sum(!is.na(price.kWh.notax.med1)),
+    NAs = sum(is.na(price.kWh.notax.med1))
+    )
+
+df.bill.cons.temp
+
+write.csv(df.bill.cons.temp, "./output/SUM_Bill_pricekwhNOTAX_summer_NOrecov.csv", 
+          row.names = FALSE, na="")
+```
+
+
+**Amount of MXN$ paid by KWh by region, data that was recovered**
+```{r, results="hold"}
+df.bill.cons.temp <- subset(df.bill.cons, df.bill.cons$day.recovered == 1) %>%
+  group_by(is.summer1, region.f) %>% 
+  summarize(Min = min(price.kWh.notax.med1, na.rm=TRUE),
+    q1 = quantile(price.kWh.notax.med1, 0.25, na.rm=TRUE),
+    Median=median(price.kWh.notax.med1, na.rm=TRUE),
+    Mean=mean(price.kWh.notax.med1, na.rm=TRUE),
+    q3 = quantile(price.kWh.notax.med1, 0.75, na.rm=TRUE),
+    Max = max(price.kWh.notax.med1, na.rm=TRUE),
+    sd=sd(price.kWh.notax.med1, na.rm=TRUE),
+    n = sum(!is.na(price.kWh.notax.med1)),
+    NAs = sum(is.na(price.kWh.notax.med1))
+    )
+
+df.bill.cons.temp
+
+write.csv(df.bill.cons.temp, "./output/SUM_bill_pricekwhNOTAX_summer_recov.csv", 
+          row.names = FALSE, na="")
+```
+
+**Amount of MXN$ paid by KWh by region, data that was recovered**
+```{r, results="hold"}
+df.bill.cons.temp <- subset(df.bill.cons) %>%
+  group_by(is.summer1, region.f) %>% 
+  summarize(Min = min(price.kWh.notax.med1, na.rm=TRUE),
+    q1 = quantile(price.kWh.notax.med1, 0.25, na.rm=TRUE),
+    Median=median(price.kWh.notax.med1, na.rm=TRUE),
+    Mean=mean(price.kWh.notax.med1, na.rm=TRUE),
+    q3 = quantile(price.kWh.notax.med1, 0.75, na.rm=TRUE),
+    Max = max(price.kWh.notax.med1, na.rm=TRUE),
+    sd=sd(price.kWh.notax.med1, na.rm=TRUE),  
+    n = sum(!is.na(price.kWh.notax.med1)),
+    NAs = sum(is.na(price.kWh.notax.med1))
+    )
+
+df.bill.cons.temp
+
+write.csv(df.bill.cons.temp, "./output/SUM_bill_pricekwhNOTAX_summer_all.csv",
+          row.names = FALSE, na="")
+```    
+
+         
+
+```{r, results="hold"}
+df.bill.cons.temp <- subset(df.bill.cons, df.bill.cons$day.recovered == 1) %>%
+  group_by(is.summer1, region.f) %>% 
+  summarize(Min = min(price.kWh.notax.med1, na.rm=TRUE),
+    q1 = quantile(price.kWh.notax.med1, 0.25, na.rm=TRUE),
+    Median=median(price.kWh.notax.med1, na.rm=TRUE),
+    Mean=mean(price.kWh.notax.med1, na.rm=TRUE),
+    q3 = quantile(price.kWh.notax.med1, 0.75, na.rm=TRUE),
+    Max = max(price.kWh.notax.med1, na.rm=TRUE),
+    n = sum(!is.na(price.kWh.notax.med1)),
+    NAs = sum(is.na(price.kWh.notax.med1))
+    )
+
+df.bill.cons.temp
+
+#write.csv(df.bill.cons.temp, "./output/TEMP_bill_cons_recov.csv", 
+#          row.names = FALSE, na="")
+```
+
+**Amount of MXN$ paid by KWh by region, data that was recovered**
+```{r, results="hold"}
+df.bill.cons.temp <- subset(df.bill.cons, df.bill.cons$day.recovered == 1) %>%
+  group_by(is.summer1, region.f) %>% 
+  summarize(Min = min(bill.amount1, na.rm=TRUE),
+    q1 = quantile(bill.amount1, 0.25, na.rm=TRUE),
+    Median=median(bill.amount1, na.rm=TRUE),
+    Mean=mean(bill.amount1, na.rm=TRUE),
+    q3 = quantile(bill.amount1, 0.75, na.rm=TRUE),
+    Max = max(bill.amount1, na.rm=TRUE),
+    n = sum(!is.na(bill.amount1)),
+    NAs = sum(is.na(bill.amount1))
+    )
+
+df.bill.cons.temp
+
+#write.csv(df.bill.cons.temp, "./output/TEMP_bill_cons_recov.csv", 
+#          row.names = FALSE, na="")
+```
+
+
+**Monthly consumption by region, all data**
+```{r, results="hold"}
+
+df.bill.cons.temp <- subset(df.bill.cons) %>%
+  group_by(mes_inic1.f) %>% 
+  summarize(Min = min(cons.month.kWh.med1, na.rm=TRUE),
+    q1 = quantile(cons.month.kWh.med1, 0.25, na.rm=TRUE),
+    Median=median(cons.month.kWh.med1, na.rm=TRUE),
+    Mean=mean(cons.month.kWh.med1, na.rm=TRUE),
+    q3 = quantile(cons.month.kWh.med1, 0.75, na.rm=TRUE),
+    Max = max(cons.month.kWh.med1, na.rm=TRUE),
+    n = sum(!is.na(cons.month.kWh.med1)),
+    NAs = sum(is.na(cons.month.kWh.med1))
+    )
+
+df.bill.cons.temp
+
+write.csv(df.bill.cons.temp, "./output/TEMP_bill_cons_all.csv", 
+          row.names = FALSE, na="")
+```
+
+
+# TEMP
+
+**Monthly consumption by region, data that hasn't been recovered**
+
+
+**Bill Amount**
+
+**Owed bill by region, data that was recovered**
+
+
+```{r}
+# Summary by group using dplyr
+library(psych)
+#psych::describeBy(df.bill.cons.temp$cons.month.kWh.med1, group=df.bill.cons.temp$region, mat=FALSE,type=3, digits=15)
+
+describe.by(df.bill.cons.amount, df.bill.cons.amount$region)
+```
+
+
+
+```{r}
+df.bill.cons.temp <- subset(df.bill.cons, df.bill.cons$day.recovered == 0,
+                        select=c('cons.month.kWh.low1', 'cons.month.kWh.med1', 
+                                 'cons.month.kWh.hig1', 'region'))
+```
+
+
+```{r}
+descr(df.bill.cons$day.recovered)
+#df.bill.cons$cons.month.kWh.med1
+df.bill.temp <- subset(df.bill.cons,
+                        select=c('cons.day.kWh.low1', 'cons.day.kWh.med1', 
+                                 'cons.day.kWh.hig1', 'factor_sem'))
+
+
+#df.bill.cons$final.month.mod[df.bill.cons$day.recovered == 0]
+
+dstrata <- df.bill.cons %>%
+  as_survey_design(id = upm, strata = est_dis, weights = factor_sem) 
+
+tbl.mean.cons <- dstrata %>% 
+  group_by(SES, day.recovered)  %>%
+  summarize(mean_cons_month = survey_mean(cons.month.kWh.med1, na.rm= TRUE, vartype = c("ci")))
+
+```
+
+

@@ -1,0 +1,252 @@
+---
+title: "ENIGH 2018 - Electricity Spending and Income Deciles"
+author: '[Mauricio Hernandez](http://mauricioh2.com)'
+date: "`r Sys.Date()`"
+subtitle: Estimate Subsidies
+bibliography: energy_mex.bib
+---
+
+
+```{r}
+#Remove all objects from current workspace and call garbage collector
+rm(list=ls())
+gc()
+
+source("./script/general_setup_functions.R")
+source("./script/compute_consumption_bill.R")
+source("./script/get_bill_periodicity.R")
+```
+
+
+Notes: Dollar Exchange Rate: 	18.70	30-Jun-18, Ref. Banxico, 2021 (https://www.banxico.org.mx/tipcamb/main.do?page=tip&idioma=sp)
+```{r}
+DOLLAR_TO_MXN <- 19.69
+```
+
+```{r knitr_init, include=FALSE}
+#options(max.print = "75")
+opts_chunk$set(echo = TRUE,
+	             cache = FALSE,
+               prompt = FALSE,
+               tidy = FALSE,
+               comment = NA,
+               message = FALSE,
+               warning = FALSE,
+               fig.path = 'figures/')
+```
+
+```{r setup, include=FALSE}
+#Generates the css needed by summarytools
+st_css()
+
+#devtools::install_github("ropensci/plotly")
+knitr::opts_chunk$set(fig.width = 8, collapse = TRUE)
+
+knitr::knit_hooks$set(output = function(x, options){
+  if(!is.null(options$max_height)){
+    paste('<pre style = "max-height:',
+          options$max_height, 
+          ';float: left; width: 910px; overflow-y: auto;">',
+          x,
+          "</pre>",
+          sep = "")
+  } else{
+    x
+  }
+})
+```
+
+
+```{r}
+#C:\Users\rapiduser\Documents\GitHub\analysis-energy-demand-mx\input\enigh2018/concentradohogar.csv
+df_enigh_conc <- read.csv("./input/enigh2018/concentradohogar.csv", 
+                           header = TRUE, na.strings="")
+
+df_enigh_gastohh <- read.csv("./input/enigh2018/gastoshogar.csv", 
+                           header = TRUE, na.strings="")
+
+df_enigh_gastopers <- read.csv("./input/enigh2018/gastospersona.csv", 
+                           header = TRUE, na.strings="")
+
+df_enigh_conc <- df_enigh_conc %>%
+  rename(folioviv = ï..folioviv)
+
+df_enigh_gastohh <- df_enigh_gastohh %>%
+  rename(folioviv = ï..folioviv)
+
+df_enigh_gastopers <- df_enigh_gastopers %>%
+  rename(folioviv = ï..folioviv)
+
+head(df_enigh_conc)
+head(df_enigh_gastohh)
+head(df_enigh_gastopers)
+```
+
+
+```{r}
+# Select only expenses related to electricity
+df_enigh_gastopers_sub <- subset(df_enigh_gastopers, clave=="R001")
+df_enigh_gastopers_sub <- subset(df_enigh_gastopers_sub, select= c(folioviv, foliohog, gasto, gasto_tri))
+df_enigh_gastopers_sub<- orderBy (~+folioviv+foliohog, data=df_enigh_gastopers_sub)
+
+#df_enigh_gastopers_sub %>% drop_na()
+
+df_enigh_gastopers_sub <- df_enigh_gastopers_sub[complete.cases(df_enigh_gastopers_sub), ]
+df_enigh_gastopers_sub
+```
+
+```{r}
+descr(df_enigh_gastopers_sub)
+```
+
+
+```{r}
+# Select only expenses related to electricity
+df_enigh_gastohh_sub <- subset(df_enigh_gastohh, clave=="R001")
+
+df_enigh_gastohh_sub <- subset(df_enigh_gastohh_sub, select= c(folioviv, foliohog, clave, gasto, gasto_tri))
+df_enigh_gastohh_sub <- orderBy (~+folioviv+foliohog, data=df_enigh_gastohh_sub)
+df_enigh_gastohh_sub
+```
+
+
+df_enigh_accumhh <- aggregate(df_enigh_gastohh$gas_nm_tri, 
+                              by=list(folioviv=df_enigh_gastohh$folioviv), FUN=sum)
+
+write.csv(df_enigh_accumhh,"./output/enigh_hh_energy_spending.csv", row.names = FALSE)
+
+
+
+**Merge household and individual spending dataframes**
+
+```{r}
+df_enigh_spend_elect <- merge(df_enigh_gastohh_sub, df_enigh_gastopers_sub, by=c("folioviv","foliohog"), all=TRUE) # NA's match\
+df_enigh_spend_elect$elect_month_spend <- rowSums(df_enigh_spend_elect[,c("gasto.x", "gasto.y")], na.rm=TRUE)
+
+df_enigh_spend_elect$elect_trimonth_spend <- rowSums(df_enigh_spend_elect[,c("gasto_tri.x", "gasto_tri.y")], na.rm=TRUE)
+  
+
+df_enigh_spend_elect <- df_enigh_spend_elect[ c("folioviv", "foliohog", 
+                                                "elect_month_spend", 
+                                                "elect_trimonth_spend")]
+
+#df_enigh_spend_elect <- aggregate(df_enigh_spend_elect$elect_month_spend, 
+#                              by=list(folioviv=df_enigh_spend_elect$folioviv), FUN=sum)
+
+df_enigh_spend_elect <- df_enigh_spend_elect %>%
+  group_by(folioviv, foliohog) %>%
+  summarise(elect_month_spend=sum(elect_month_spend),
+            elect_trimonth_spend=(sum(elect_trimonth_spend)))
+
+
+head(df_enigh_spend_elect)
+```
+
+
+
+## First chart
+```{r}
+#select subset
+df_enigh_conc_sub <- df_enigh_conc[ c("folioviv", "foliohog", "ubica_geo", "tam_loc", "est_socio", "sexo_jefe","educa_jefe","ing_cor", "bene_gob", "gasto_mon", "energia","factor","upm","est_dis")]
+
+#sort dataframes before merging them
+df_enigh_conc_sub<- orderBy (~+folioviv+foliohog, data=df_enigh_conc_sub)
+df_enigh_spend_elect<- orderBy (~+folioviv+foliohog, data=df_enigh_spend_elect)
+
+df_enigh_conc_sub <- merge(df_enigh_conc_sub, df_enigh_spend_elect, by=c("folioviv","foliohog"), all.x=TRUE, all.y=FALSE)
+
+write.csv(df_enigh_conc_sub,"./output/df_enigh_conc_sub.csv", row.names = FALSE)
+```
+
+
+```{r}
+# add state identifier, municipality identifier and urban identifier (6 = rural, otherwise urban )
+#df_enigh_conc_sub$state_id <- substr(df_enigh_conc_sub$folioviv,1,2)
+#df_enigh_conc_sub$urban_folio_viv <- substr(df_enigh_conc_sub$folioviv,3,3)
+#df_enigh_conc_sub$munic_id <- substr(df_enigh_conc_sub$folioviv,4,7)
+```
+
+
+```{r}
+Numdec<-c("Total", "I", "II", "III","IV", "V", "VI", "VII", "VIII", "IX","X")
+# variable to enum the number of households
+df_enigh_conc_sub$Nhog <- 1
+
+
+# Cuadro1
+# Ingreso corriente total promedio trimestral por hogar en deciles de hogares
+# 2018
+##################### income_decileES DE INGRESO ###################
+# deja activa la tabla Conc
+attach(df_enigh_conc_sub)
+# ordena Conc de acuerdo a ing_cor, folioviv, foliohog.
+df_enigh_conc_sub<- orderBy (~+ing_cor+folioviv+foliohog, data=df_enigh_conc_sub)
+# suma todos los factores y guarda el valor en el vector tot_households.
+tot_households <- sum(factor,to.data.frame=TRUE)
+
+# se divide la suma de factores entre diez para sacar el tamaño del decil
+# se debe de truncar el resultado quitando los decimales.
+size_decile<-trunc(tot_households/10)
+# muestra la suma del factor en variable hog.
+df_enigh_conc_sub$size_decile=size_decile
+
+detach(df_enigh_conc_sub)
+```
+
+```{r}
+#Income deciles
+############### CREACION DE income_decileES DE INGRESO #######################
+# se renombra la tabla concentrado a BD1.
+BD1 <- df_enigh_conc_sub
+# dentro de la tabla BD1 se crea la variable MAXT y se le asigna los valores que tienen el ing_cor.
+BD1$MAXT<-BD1$ing_cor
+# se ordena de menor a mayor según la variable MAXT.
+BD1<-BD1[with(BD1, order(rank(MAXT))),]
+# se aplica la función cumsum, suma acumulada a la variable factor.
+BD1$ACUMULA<-cumsum(BD1$factor)
+
+# entra a un ciclo donde iremos generando los deciles 1 a 10.
+for(i in 1:9)
+{
+ a1<-BD1[dim(BD1[BD1$ACUMULA<size_decile*i,])[1]+1,]$factor
+ BD1<-rbind(BD1[1:(dim(BD1[BD1$ACUMULA<size_decile*i,])[1]+1),],
+ BD1[(dim(BD1[BD1$ACUMULA<size_decile*i,])[1]+1):dim(BD1[1])[1],])
+ b1<-size_decile*i-BD1[dim(BD1[BD1$ACUMULA<size_decile*i,])[1],]$ACUMULA
+ BD1[(dim(BD1[BD1$ACUMULA<size_decile*i,])[1]+1),]$factor<-b1
+ BD1[(dim(BD1[BD1$ACUMULA<size_decile*i,])[1]+2),]$factor<-(a1-b1)
+}
+BD1$ACUMULA2<-cumsum(BD1$factor)
+BD1$income_decile<-0
+BD1[(BD1$ACUMULA2<=size_decile),]$income_decile<-1
+for(i in 1:9)
+{
+ BD1[((BD1$ACUMULA2>size_decile*i)&(BD1$ACUMULA2<=size_decile*(i+1))),]$income_decile<-(i+1)
+}
+BD1[BD1$income_decile%in%"0",]$income_decile<-10
+
+##################################################################
+# TOTAL HOGARES
+x<-tapply(BD1$factor,BD1$Nhog,sum)
+# income_decileES
+y<-tapply(BD1$factor,BD1$income_decile,sum)
+# se calcula el promedio (ingreso entre los hogares) tanto para el total como para cada uno de los deciles
+ing_cormed_t<-tapply(BD1$factor*BD1$ing_cor,BD1$Nhog,sum)/x
+ing_cormed_d<-tapply(BD1$factor*BD1$ing_cor,BD1$income_decile,sum)/y
+########################## C U A D R O S #################################
+# guardamos los resultados en un data frame
+prom_rub <- data.frame (c(ing_cormed_t,ing_cormed_d))
+# agregamos el nombre a las filas
+row.names(prom_rub)<-Numdec
+## NOTA: El cálculo de las precisiones estadísticas de deciles y del coeficiente de GINI no son mostradas debido
+# a que requieren el uso de técnicas de remuestreo ##
+prom_rub
+
+BD1 <- orderBy (~+folioviv+foliohog+income_decile, data=BD1)
+
+write.csv(BD1,"./output/enigh_hh_by_decil.csv", row.names = FALSE)
+
+BD1
+```
+
+
+
