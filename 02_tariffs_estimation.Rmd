@@ -12,12 +12,14 @@ This section presents the steps performed to compute the daily electricity consu
 Estimate the periodicity in which users pay their electricity bill.
 
 
-^1^ Althought ENCEVI collected some data about the last electricity bill paid by households, it did not collect data about the amount of electricity consumed. So, we had to calculate the electricity consumption.
+^1^ Although ENCEVI collected some data about the last electricity bill paid by households, it did not collect data about the amount of electricity consumed. So, we had to calculate the electricity consumption.
 
 ^2^ We computed the electricity consumption only of the households that provided all the required data from their last electricity bill. For instance, if a household did not provide data about their bill period, its information was not used in this analysis.
 
 ^3^ low electricity consumption values are the minimum estimated cost of electricity that a household paid based on their tariff and the minimum tax that could be charged. While, high electricity consumption  values are the maximum estimated cost of electricity based on the same parameters. Finally, the medium electricity consumption is the average of the low and high values.
 
+
+Notes: Dollar Exchange Rate: 	18.70	15-Mar-18
 
 ```{r, include=FALSE}
 #Remove all objects from current workspace and call garbage collector
@@ -68,8 +70,7 @@ knitr::knit_hooks$set(output = function(x, options){
 ```{r}
 df.enc.dwell <- read.csv("./output/encevi_dwelling_temp.csv", header = TRUE, na.strings="")
 df.enc.dwell$X.1 <- NULL
-#Importing data of summer months per region
-df.summer.months <- read.csv("./input/tariffs_summer_months.csv")
+
 
 df.dap.tax <- read.csv("./input/tariffs_dap_tax.csv", header = TRUE, na.strings="")
 # Remove duplicated rows based on ageem.id
@@ -107,18 +108,13 @@ df.enc.dwell$region.tariff.f <- factor(df.enc.dwell$region.tariff.f,
                                           "Northeast", "Northwest", 
                                           "North", "Peninsular", "South"))
 
-df.summer.months$region.tariff.f <- factor(df.summer.months$region.tariff.f,
-                               levels = c(1, 2, 3, 4, 5, 6, 7, 8),
-                               labels = c("BC", "BCS", "Central", 
-                                          "Northeast", "Northwest", 
-                                          "North", "Peninsular", "South"))
-
 df.enc.dwell$dwelling.size <- ordered(df.enc.dwell$dwelling.size, 
                                            levels = c(">30m2", "31-55m2", 
                                                       "56-75m2", "76-100m2", 
                                                       "101-150m2", "151-200m2", 
                                                       "<201m2", "Don't know"))
 ```
+
 
 ```{r tbl-tariff-region}
 tb.tariff.region <- freq(df.enc.dwell$region.tariff.f, weight = df.enc.dwell$factor_sem,  
@@ -169,7 +165,10 @@ knitr::kable(df.miss.tariff, label = 'table-freq-tarif.f', digits = 3,
       align = 'r', booktabs = TRUE, full_width = FALSE,
   caption = 'Frequency table of electric tariffs - Households Surveyed') %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive")) 
+
+write.csv(df.miss.tariff,"./output/tables/df_miss_tariff.csv", row.names = FALSE)
 ```
+
 
 ```{r tbl-freq-tariff}
 df.enc.dwell$tipo_tarif.f [df.enc.dwell$tipo_tarif.f == "Don't know"] <- NA
@@ -179,6 +178,7 @@ df.enc.dwell$tipo_tarif.f <- droplevels(df.enc.dwell$tipo_tarif.f)
 tb.freq.tariff<- freq(df.enc.dwell$tipo_tarif.f, report.nas = TRUE, 
                        style = "rmarkdown", weights = df.enc.dwell$factor_sem, 
                        headings = FALSE, na.rm = TRUE)
+
 
 knitr::kable(tb.freq.tariff, label = 'table-freq-tariff', digits = 3, 
       align = 'r', booktabs = TRUE, full_width = FALSE,
@@ -209,8 +209,13 @@ df.enc.dwell$tariff.merge[is.na(df.enc.dwell$tariff.merge)] <- df.enc.dwell$tari
 df.enc.dwell$tariff.merge <- droplevels(df.enc.dwell$tariff.merge)
 
 tb.tariff.merge <- freq(df.enc.dwell$tariff.merge, report.nas = TRUE, 
-                       style = "rmarkdown", weights = df.enc.dwell$factor_sem, 
+                       style = "rmarkdown",  
                        headings = FALSE, na.rm = TRUE)
+
+#tb.tariff.merge <- freq(df.enc.dwell$tariff.merge, report.nas = TRUE, 
+#                       style = "rmarkdown", weights = df.enc.dwell$factor_sem, 
+#                       headings = FALSE, na.rm = TRUE)
+
 
 knitr::kable(tb.tariff.merge, label = 'table-freq-tarif.merge', digits = 3, 
       align = 'r', booktabs = TRUE, full_width = FALSE,
@@ -219,7 +224,17 @@ knitr::kable(tb.tariff.merge, label = 'table-freq-tarif.merge', digits = 3,
                                       "responsive"),
                 fixed_thead = TRUE)  %>%
 row_spec(10, bold = T, color = "white", background = "#D7261E")
+
+write.csv(tb.tariff.merge,"./output/tables/tb_tariff_merge.csv", row.names = TRUE)
+
 ```
+
+
+```{r}
+df.enc.dwell.sub <- subset(df.enc.dwell, !is.na(df.enc.dwell$tariff.merge))
+```
+
+
 The procedure described above, allowed us to reduce the unknown tariffs to `r myround(tb.tariff.merge[10,4], 2)`%.
 
 _It is important to mention that some of the tariffs estimated in the variable tariff.merge (especifically, the ones that have a value of NA or "Don't know" in the variable tipo.tarif.f) should be classified as high consumption tariff (DAC). In further steps, when we evaluate the expenses in electricity, we will estimate which variables are DAC._
@@ -241,6 +256,9 @@ knitr::kable(df.tariff.cost[ , 1:8],
                                       "condensed", "responsive"),
                 fixed_thead = T, full_width = F) %>%
   scroll_box(width = "100%", height = "300px")
+
+
+write.csv(df.tariff.cost[ , 1:8],"./output/tables/tariff_cost.csv", row.names = TRUE)
 ```
 
 ```{r, fig-map-tariffs, figure_captions("fig_map_tariffs", "Tariff Regions"), out.width='95%', fig.pos="h"}
@@ -275,7 +293,7 @@ The survey also collected information about how much users had to pay to cover t
 
 <i>A complete description of the electricity consumption and estimation of tariffs can be found in the file "estimating_tariffs_consumption"</i>
 
-To estimate the electricity consumption of each household surveyed, we started by estimating the number of days that were covered in the electricty bills of the households surveyed. Along these lines, this section shows the steps we followed to clean the data and compute the number of the days billed [@ramirez-camperos_mexican_2013].
+To estimate the electricity consumption of each household surveyed, we started by estimating the number of days that were covered in the electricity bills of the households surveyed. Along these lines, this section shows the steps we followed to clean the data and compute the number of the days billed [@ramirez-camperos_mexican_2013].
 
 ```{r}
 #TODO: eliminate this source statement
@@ -287,7 +305,10 @@ df.enc.dwell$inicia1[df.enc.dwell$inicia1 == 99] <- NA
 df.enc.dwell$final1[df.enc.dwell$final1 == 99] <- NA
 
 df.bill.dates <- subset(df.enc.dwell,
-                        select=c(folio, mes_inic1, inicia1, mes_final1, final1))
+                        select=c(folio, mes_inic1, inicia1, mes_final1, final1), !is.na(df.enc.dwell$tariff.merge))
+
+#df.bill.dates <- subset(df.enc.dwell,
+#                        select=c(folio, mes_inic1, inicia1, mes_final1, final1), #df.enc.dwell$tariff.merge != "NA")
 
 setnames(df.bill.dates, 
          old=c("mes_inic1", "inicia1", "mes_final1", "final1"), 
@@ -295,24 +316,17 @@ setnames(df.bill.dates,
 
 df.bill.dates <- GetBillPeriodicity (df.bill.dates)
 
-descr(df.bill.dates, stats = c("mean", "sd", "min", "med", "max", "n.valid", "pct.valid"), transpose = TRUE)
+descr(df.bill.dates, stats = c("mean", "sd", "min", "med", "max", "n.valid", "pct.valid"), 
+      transpose = TRUE)
+```
+```{r}
+#df.bill.dates2 <- subset(df.bill.dates, is.na(bill.days))
+df.bill.dates2 <- subset(df.bill.dates, mes_final >= 1 & mes_inic >=1 & is.na(bill.days))
+dim(df.bill.dates2)
+descr(df.bill.dates2, stats = c("mean", "sd", "min", "med", "max", "n.valid", "pct.valid"), transpose = TRUE)
 ```
 
-stat.kwh.month <- as.data.frame(stat.kwh.month)
-
-knitr::kable(stat.kwh.month, 
-      label = 'table-stats-kwhmonth', digits = 3, align = 'c', booktabs = TRUE,
-  caption = 'Summary statistics of monthly electricity consumption (in KWh)') %>%
-  kable_styling(bootstrap_options = c("striped", "hover", 
-                                      "condensed", "responsive"),
-                fixed_thead = T) %>%
-  scroll_box(width = "100%")
-
-rm(df.bill.temp)
-
-stat.kwh.month$percent.valid <-stat.kwh.month$`% Total`
-
-
+**Calculate number of months covered in each bill **
 ```{r}
 df.bill.dates['num_month_bill'] <- NA
 
@@ -333,7 +347,6 @@ FillMonthsGap<-function(month_end, month_ini, days_valid, months_bill){
   }
 }
 
-
 df.bill.dates$num_month_bill = as.numeric(difftime(df.bill.dates$bill.end.date, 
                                                    df.bill.dates$bill.ini.date, units ="days"))/(365.25/12)
 
@@ -341,72 +354,788 @@ df.bill.dates$num_month_bill <- mapply(FillMonthsGap, df.bill.dates$mes_final,
                                     df.bill.dates$mes_inic, 
                                     df.bill.dates$bill.days.valid, 
                                     df.bill.dates$num_month_bill)
+```
+
+**Bill dates after calculated number of months in each bill**
+
+```{r}
+descr(df.bill.dates, 
+      stats = c("mean", "sd", "min", "med", "max", "n.valid", "pct.valid"), 
+      transpose = TRUE)
+```
+
+```{r}
+df.enc.dwell$mes_final <- NULL
+df.enc.dwell$mes_final.x <- NULL
+df.enc.dwell$mes_final.y <- NULL
+
+df.enc.dwell$mes_inic <- NULL
+df.enc.dwell$mes_inic.x <- NULL
+df.enc.dwell$mes_inic.y <- NULL
+
+df.enc.dwell <- merge(df.enc.dwell, df.bill.dates, by="folio")
+
+setnames(df.enc.dwell, 
+         old=c("bill.days","bill.days.valid", "bill.ini.date", 
+               "bill.end.date", "year.ini", "year.end", "num_month_bill"), 
+         new=c("bill.days1", "bill.days1.valid", "bill.ini.date1", 
+               "bill.end.date1", "year.ini1", "year.end1", "num_month_bill.x"))
+```
 
 
-#Loop to get median value of months in each bill with a monthly period 
-df.bill.dates['bill.days.valid.dummy'] <- NA
+```{r}
+descr(df.enc.dwell$bill.days1.valid, 
+     # weights = df.enc.dwell$factor_sem, 
+      stats = c("mean", "sd", "min", "med", "max", "n.valid", "pct.valid"), 
+      transpose = TRUE)
+```
 
+*Monthly bills before data recovery*
+```{r}
+CreateMonthBillHistPlots <- function(month, legend){
+  #Ref: https://plotly.com/r/text-and-annotations/
+  sample_size = sum(complete.cases(df.enc.dwell$bill.days1.valid[df.enc.dwell$mes_inic == month & df.enc.dwell$num_month_bill > 0.95 & df.enc.dwell$num_month_bill <= 1.5 ]), na.rm = TRUE)
+  
+  f <- list(
+  family = "Courier New, monospace",
+  size = 18,
+  color = "#7f7f7f ")
+  
+  a <- list(
+    x = 37,
+    y = 0.75,
+    text = paste0("n=", sample_size),
+    xref = "x",
+    yref = "y",
+    showarrow = FALSE,
+    arrowhead = 7,
+    ax = 20,
+    ay = -40,
+    titlefont = f)
+  
+  x <- list(
+    title = "x Axis",
+    titlefont = f)
+  
+  y <- list(
+    title = "y Axis",
+    titlefont = f)
+
+
+  fit <- density(df.enc.dwell$bill.days1.valid[df.enc.dwell$mes_inic == month & df.enc.dwell$num_month_bill > 0.95 & df.enc.dwell$num_month_bill <= 1.5 ], na.rm = TRUE)
+  
+  myplt <- plot_ly(x = df.enc.dwell$bill.days1.valid[df.enc.dwell$mes_inic == month & df.enc.dwell$num_month_bill > 0.95 & df.enc.dwell$num_month_bill <= 1.5 ],
+               type = "histogram",
+               histnorm = "probability",
+               name = legend) %>%
+      #add_trace(x = fit$x, y = fit$y, yaxis = "y2", name = "Density") %>%
+    layout(title = 'Distribution of Days Billed Reported by ENCEVI (Monthly Bills) - Before Data Recovery',
+           xaxis = list(title = "days", range = c(20, 40)), 
+           yaxis = list(title = "Probability", range = c(0, 0.9)),
+           legend = list(title = "month"),
+           #yaxis2 = list(overlaying = "y", side = "right")
+           annotations = a
+           )
+  myplt
+}
+
+plotList <- function(seq_months) {
+    lapply(seq_len(length(seq_months)), function(x) CreateMonthBillHistPlots(seq_months))
+}
+
+s1 <- subplot(CreateMonthBillHistPlots(1, 'jan'), CreateMonthBillHistPlots(2, 'feb'), 
+              CreateMonthBillHistPlots(3, 'mar'), CreateMonthBillHistPlots(4, 'apr'), 
+              nrows = 1, shareX = TRUE, shareY = TRUE)
+
+s2 <- subplot(CreateMonthBillHistPlots(5, 'may'), CreateMonthBillHistPlots(6, 'jun'), 
+              CreateMonthBillHistPlots(7, 'jul'), CreateMonthBillHistPlots(8, 'aug'),  
+              nrows = 1, shareX = TRUE, shareY = TRUE)
+
+s3 <- subplot(CreateMonthBillHistPlots(9, 'sep'), CreateMonthBillHistPlots(10, 'oct'), 
+              CreateMonthBillHistPlots(11, 'nov'), CreateMonthBillHistPlots(12, 'dec'),  
+              nrows = 1, shareX = TRUE, shareY = TRUE)
+
+fig <- subplot(s1, s2, s3, nrows = 3, margin = 0.04, heights = c(0.33, 0.33, 0.34)) 
+
+fig
+
+plotly_IMAGE(fig, format = "png", 
+             out_file = "./output/fig/hist_bill_period_per_month_monthly_before.png")
+```
+
+*Bimontly bills before data recovery*
+```{r}
+CreateBimonthBillHistPlots<-function(month, legend){
+  #Ref: https://plotly.com/r/text-and-annotations/
+  sample_size = sum(complete.cases(df.enc.dwell$bill.days1.valid[df.enc.dwell$mes_inic == month & df.enc.dwell$num_month_bill > 1.5 & df.enc.dwell$num_month_bill <= 2.5 ]), na.rm = TRUE)
+  
+  f <- list(
+  family = "Courier New, monospace",
+  size = 18,
+  color = "#7f7f7f ")
+  
+  a <- list(
+    x = 68,
+    y = 0.5,
+    text = paste0("n=", sample_size),
+    xref = "x",
+    yref = "y",
+    showarrow = FALSE,
+    arrowhead = 7,
+    ax = 20,
+    ay = -40,
+    titlefont = f)
+  
+  x <- list(
+    title = "x Axis",
+    titlefont = f)
+  
+  y <- list(
+    title = "y Axis",
+    titlefont = f)
+
+
+  fit <- density(df.enc.dwell$bill.days1.valid[df.enc.dwell$mes_inic == month & df.enc.dwell$num_month_bill > 1.5 & df.enc.dwell$num_month_bill <= 2.5 ], na.rm = TRUE)
+  
+  myplt <- plot_ly(x = df.enc.dwell$bill.days1.valid[df.enc.dwell$mes_inic == month & df.enc.dwell$num_month_bill > 1.5 & 
+                                            df.enc.dwell$num_month_bill <= 2.5 ],
+               type = "histogram",
+               histnorm = "probability",
+               name = legend) %>%
+      #add_trace(x = fit$x, y = fit$y, yaxis = "y2", name = "Density") %>%
+    layout(title = 'Distribution of Days Billed Reported by ENCEVI (Bi-Monthly Bills) - Before Data Recovery',
+           xaxis = list(title = "days", range = c(50, 70)), 
+           yaxis = list(title = "Probability"),
+           legend = list(title = "month"),
+           #yaxis2 = list(overlaying = "y", side = "right")
+           annotations = a
+           )
+  myplt
+}
+
+
+plotList <- function(seq_months) {
+    lapply(seq_len(length(seq_months)), function(x) CreateBimonthBillHistPlots(seq_months))
+}
+
+s1 <- subplot(CreateBimonthBillHistPlots(1, 'jan'), CreateBimonthBillHistPlots(2, 'feb'), 
+              CreateBimonthBillHistPlots(3, 'mar'), CreateBimonthBillHistPlots(4, 'apr'), 
+              nrows = 1, shareX = TRUE, shareY = TRUE)
+
+s2 <- subplot(CreateBimonthBillHistPlots(5, 'may'), CreateBimonthBillHistPlots(6, 'jun'), 
+              CreateBimonthBillHistPlots(7, 'jul'), CreateBimonthBillHistPlots(8, 'aug'),  
+              nrows = 1, shareX = TRUE, shareY = TRUE)
+
+s3 <- subplot(CreateBimonthBillHistPlots(9, 'sep'), CreateBimonthBillHistPlots(10, 'oct'), 
+              CreateBimonthBillHistPlots(11, 'nov'), CreateBimonthBillHistPlots(12, 'dec'),  
+              nrows = 1, shareX = TRUE, shareY = TRUE)
+
+f <- list(
+  family = "Courier New, monospace",
+  size = 18,
+  color = "#7f7f7f ")
+  
+x <- list(
+  title = "x Axis",
+  titlefont = f)
+
+y <- list(
+  title = "y Axis",
+  titlefont = f)
+
+
+fig <- subplot(s1, s2, s3, nrows = 3, margin = 0.04, heights = c(0.33, 0.33, 0.34)) 
+fig
+
+plotly_IMAGE(fig, format = "png", 
+             out_file = "./output/fig/hist_bill_period_per_month_bimonthly_before.png")
+```
+
+
+```{r}
+#Store data before recovery
+df.enc.dwell.unmod <- merge(df.enc.dwell, df.bill.dates, by="folio")
+
+write.csv(df.enc.dwell, "./output/encevi_dwelling_merg_unmod.csv", 
+           row.names=TRUE, na="")
+```
+
+### Data Recovery
+Recovering only  bills with monthly periodicity
+```{r}
+#Loop to get median value of months in each bill with a monthly & bimonthly period 
 for (month in seq(1, 12, 1)) {
-    median_short_month <- median(df.bill.dates$bill.days.valid[df.bill.dates$num_month_bill >= 0.7 & 
-                                                                 df.bill.dates$num_month_bill <= 0.95 & 
-                                                                 df.bill.dates$mes_final == month], na.rm = TRUE)
-    
+    median_month <- median(df.bill.dates$bill.days.valid[df.bill.dates$num_month_bill >= 0.7 & 
+                                                                 df.bill.dates$num_month_bill <= 1.45 & 
+                                                                 df.bill.dates$mes_inic == month], na.rm = TRUE)
+        
     df.bill.dates$bill.days.valid[df.bill.dates$num_month_bill >= 0.7 & 
-                                          df.bill.dates$num_month_bill <= 0.95 & 
+                                          df.bill.dates$num_month_bill <= 1.45 & 
                                           is.na(df.bill.dates$bill.days.valid) & 
-                                          df.bill.dates$mes_final == month ] <- median_short_month
+                                          df.bill.dates$mes_inic == month ] <- median_month
     
+
+ 
+#    median_month <- median(df.bill.dates$bill.days.valid[df.bill.dates$num_month_bill > 0.95 & 
+#                                                           df.bill.dates$num_month_bill <= 1.5 & 
+#                                                           df.bill.dates$mes_inic == month], na.rm = TRUE)
     
-    median_month <- median(df.bill.dates$bill.days.valid[df.bill.dates$num_month_bill > 0.95 & 
-                                                           df.bill.dates$num_month_bill <= 1.5 & 
-                                                           df.bill.dates$mes_final == month], na.rm = TRUE)
+#    df.bill.dates$bill.days.valid[df.bill.dates$num_month_bill > 0.95 & 
+#                                          df.bill.dates$num_month_bill <= 1.5 & 
+#                                          is.na(df.bill.dates$bill.days.valid) & 
+#                                          df.bill.dates$mes_inic == month ] <- median_month
+  
     
-    df.bill.dates$bill.days.valid[df.bill.dates$num_month_bill > 0.95 & 
-                                          df.bill.dates$num_month_bill <= 1.5 & 
-                                          is.na(df.bill.dates$bill.days.valid) & 
-                                          df.bill.dates$mes_final == month ] <- median_month
+  #  median_bimonth <- median(df.bill.dates$bill.days.valid[df.bill.dates$num_month_bill > 1.5 & 
+  #                                                           df.bill.dates$num_month_bill <= 2.5 & 
+  #                                                           df.bill.dates$mes_inic == month], na.rm = TRUE) 
     
-    
-    median_bimonth <- median(df.bill.dates$bill.days.valid[df.bill.dates$num_month_bill > 1.5 & 
-                                                             df.bill.dates$num_month_bill <= 2.5 & 
-                                                             df.bill.dates$mes_final == month], na.rm = TRUE) 
-    
-    df.bill.dates$bill.days.valid[df.bill.dates$num_month_bill > 1.5 & 
-                                          df.bill.dates$num_month_bill <= 2.5 & 
-                                          is.na(df.bill.dates$bill.days.valid) & 
-                                          df.bill.dates$mes_final == month] <- median_bimonth
+  #  df.bill.dates$bill.days.valid[df.bill.dates$num_month_bill > 1.5 & 
+  #                                        df.bill.dates$num_month_bill <= 2.5 & 
+  #                                        is.na(df.bill.dates$bill.days.valid) & 
+  #                                        df.bill.dates$mes_inic == month] <- median_bimonth
 }
 
 descr(df.bill.dates, stats = c("mean", "sd", "min", "med", "max", "n.valid", "pct.valid"), transpose = TRUE)
 ```
 
+**Merging bill dates dataframe after recovering monthly bills with ENCEVI dataframe**
 ```{r}
-df.enc.dwell <- merge(df.enc.dwell, df.bill.dates, by="folio")
+df.enc.dwell.modif <- merge(df.enc.dwell, df.bill.dates, by="folio")
 
-setnames(df.enc.dwell, 
+df.enc.dwell.modif <- subset (df.enc.dwell.modif, select = -c(bill.days1, bill.days1.valid, bill.ini.date1, bill.end.date1, year.ini1, year.end1))
+
+setnames(df.enc.dwell.modif, 
          old=c("bill.days","bill.days.valid", "bill.ini.date", 
-               "bill.end.date", "year.ini", "year.end"), 
+               "bill.end.date", "year.ini", "year.end", "num_month_bill.x"), 
          new=c("bill.days1", "bill.days1.valid", "bill.ini.date1", 
-               "bill.end.date1", "year.ini1", "year.end1"))
+               "bill.end.date1", "year.ini1", "year.end1", "num_month_bill"))
 ```
 
-```{r plt-bill1-days, fig.cap="Periodicity of electricity bill", warning=FALSE, message=FALSE, results="hold"}
-pl.hist.bill.days1 <- plot_ly(x = df.enc.dwell$bill.days1,
-             type = "histogram",
-             histnorm = "probability")%>%
-  layout(title = 'Distribution of Days Billed by CFE',
-         xaxis = list(title = "days", range = c(0, 100)), 
-         yaxis = list(title = "Probability"))
-
-pl.hist.bill.days1
-
-plotly_IMAGE(pl.hist.bill.days1, format = "png", 
-             out_file = "./output/fig/hist_bill_periodicity.png")
+```{r}
+descr(df.enc.dwell.modif$bill.days1.valid, 
+      stats = c("mean", "sd", "min", "med", "max", "n.valid", "pct.valid"), 
+      transpose = TRUE)
 ```
+
+
+## Histogram of Monthly Bills After data recovery
+```{r}
+CreateMonthBillHistPlots<-function(month, legend){
+  #Ref: https://plotly.com/r/text-and-annotations/
+  sample_size = sum(complete.cases(df.enc.dwell.modif$bill.days1.valid[df.enc.dwell.modif$mes_inic1 == month & df.enc.dwell.modif$num_month_bill > 0.95 & 
+                                            df.enc.dwell.modif$num_month_bill <= 1.5 ]), na.rm = TRUE)
+  
+  f <- list(
+  family = "Courier New, monospace",
+  size = 18,
+  color = "#7f7f7f ")
+  
+  a <- list(
+    x = 37,
+    y = 0.75,
+    text = paste0("n=", sample_size),
+    xref = "x",
+    yref = "y",
+    showarrow = FALSE,
+    arrowhead = 7,
+    ax = 20,
+    ay = -40,
+    titlefont = f)
+  
+  x <- list(
+    title = "x Axis",
+    titlefont = f)
+  
+  y <- list(
+    title = "y Axis",
+    titlefont = f)
+
+
+  fit <- density(df.enc.dwell.modif$bill.days1.valid[df.enc.dwell.modif$mes_inic1 == month & df.enc.dwell.modif$num_month_bill > 0.95 & df.enc.dwell.modif$num_month_bill <= 1.5 ], na.rm = TRUE)
+  
+  myplt <- plot_ly(x = df.enc.dwell.modif$bill.days1.valid[df.enc.dwell.modif$mes_inic1 == month & df.enc.dwell.modif$num_month_bill > 0.95 & df.enc.dwell.modif$num_month_bill <= 1.5 ],
+               type = "histogram",
+               histnorm = "probability",
+               name = legend) %>%
+      #add_trace(x = fit$x, y = fit$y, yaxis = "y2", name = "Density") %>%
+    layout(title = 'Distribution of Days Billed Reported by ENCEVI (Monthly Bills) - After Data Recovery',
+           xaxis = list(title = "days", range = c(20, 40)), 
+           yaxis = list(title = "Probability", range = c(0, 0.9)),
+           legend = list(title = "month"),
+           #yaxis2 = list(overlaying = "y", side = "right")
+           annotations = a
+           )
+  myplt
+}
+
+
+plotList <- function(seq_months) {
+    lapply(seq_len(length(seq_months)), function(x) CreateMonthBillHistPlots(seq_months))
+}
+
+s1 <- subplot(CreateMonthBillHistPlots(1, 'jan'), CreateMonthBillHistPlots(2, 'feb'), 
+              CreateMonthBillHistPlots(3, 'mar'), CreateMonthBillHistPlots(4, 'apr'), 
+              nrows = 1, shareX = TRUE, shareY = TRUE)
+
+s2 <- subplot(CreateMonthBillHistPlots(5, 'may'), CreateMonthBillHistPlots(6, 'jun'), 
+              CreateMonthBillHistPlots(7, 'jul'), CreateMonthBillHistPlots(8, 'aug'),  
+              nrows = 1, shareX = TRUE, shareY = TRUE)
+
+s3 <- subplot(CreateMonthBillHistPlots(9, 'sep'), CreateMonthBillHistPlots(10, 'oct'), 
+              CreateMonthBillHistPlots(11, 'nov'), CreateMonthBillHistPlots(12, 'dec'),  
+              nrows = 1, shareX = TRUE, shareY = TRUE)
+
+f <- list(
+  family = "Courier New, monospace",
+  size = 18,
+  color = "#7f7f7f ")
+  
+x <- list(
+  title = "x Axis",
+  titlefont = f)
+
+y <- list(
+  title = "y Axis",
+  titlefont = f)
+
+
+fig <- subplot(s1, s2, s3, nrows = 3, margin = 0.04, heights = c(0.33, 0.33, 0.34)) 
+
+fig
+```
+
+## Fitting Distribution
+```{r}
+# Multiplot creates a layout structure for multiple plots in one
+# window. The function accepts ggplot objects via "..." or as a
+# list of objects. Use input "cols" to define the number of
+# columns in the plot layout. Alternatively, input "layout" to
+# define the row/col matrix of plot elements. If "layout" is
+# present, "cols" is ignored. For example, given a layout defined
+# by matrix(c(1,2,3,3), nrow=2, byrow=TRUE), then plot #1 goes in
+# the upper left, #2 goes in the upper right, and #3 will cross
+# the entire bottom row, utilizing both columns.
+ 
+multiplot <- function(..., plotlist = NULL, file, cols = 1, layout = NULL) {
+   # launch the grid graphical system
+   require(grid)
+ 
+   # make a list from the "..." arguments and/or plotlist
+   plots <- c(list(...), plotlist)
+   numPlots = length(plots)
+ 
+   # if layout = NULL, then use 'cols' to determine layout
+   if (is.null(layout)) {
+      # make the panel using ncol; nrow is calculated from ncol
+      layout <- matrix(seq(1, cols * ceiling(numPlots/cols)), ncol = cols, nrow = ceiling(numPlots/cols))
+   }
+ 
+   if (numPlots==1) {
+      print(plots[[1]])
+   } else {
+      # set up the page
+      grid.newpage()
+      pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+      # put each plot, in the correct location
+      for (i in 1:numPlots) {
+         # get the i,j matrix position of the subplot
+         matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+         print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row, layout.pos.col = matchidx$col))
+      }
+   }
+}
+```
+
+
+
+```{r}
+library(glogis)
+library(fitdistrplus)
+
+#create data frame with 0 rows and 3 columns
+df.fit.stats <- data.frame(matrix(ncol = 8, nrow = 0))
+
+#provide column names
+colnames(df.fit.stats) <- c('ini_month', 'bill_freq','function_dist', 
+                            'Kolmogorov_smirnov_stat', "Cramer_von_stat", 
+                            "Anderson_Darling_stat", "Akaike_info_criteria", 
+                            "Bayesian_info_criteria")
+
+GetFittingStats  <- function(month, period, dist.function, stats){
+  selected.stats = c(month, period, dist.function, stats$ks, stats$ad, 
+                     stats$cvm, stats$aic, stats$bic)
+  selected.stats
+}
+
+
+for (month in 1:12) {
+
+  data= df.enc.dwell.modif$bill.days1.valid[df.enc.dwell.modif$mes_inic1 == month & 
+                                      df.enc.dwell.modif$num_month_bill > 1.5 & 
+                                      df.enc.dwell.modif$num_month_bill <= 2.5 ]
+
+  data_weight= df.enc.dwell.modif$factor_sem[df.enc.dwell.modif$mes_inic1 == month & 
+                                       df.enc.dwell.modif$num_month_bill > 1.5 &
+                                       df.enc.dwell.modif$num_month_bill <= 2.5 ]
+
+  df <- data.frame(data, data_weight)
+  df = na.omit(df)
+
+  img.path <- paste0("./output/fig/emprirical_dist_month_", month,".jpg")
+  jpeg(img.path)
+  descdist(df$data, boot=2000)
+  dev.off()
+
+  flog <- fitdist(df$data, "logis")
+  fg <- fitdist(df$data, "gamma")
+  fln <- fitdist(df$data, "lnorm")
+  fw <- fitdist(df$data, "weibull")
+  fn <- fitdist(df$data, "norm")
+  fexp <- fitdist(df$data, "exp")
+  #fcauch <- fitdist(df$data,"cauchy")
+
+  #set.seed(1234)
+  #x4 <- rweibull(n=1000,shape=2,scale=1)
+  # fit of the good distribution
+  #f4 <- fitdist(x4,"weibull")
+  # fit of a bad distribution
+
+  (stat.log <- gofstat(flog, fitnames=c("Logistic")))
+  (stat.gamma <- gofstat(fg, fitnames=c("Gamma")))
+  (stat.lnorm <- gofstat(fln, fitnames=c("Log-Normal")))
+  (stat.weib <-gofstat(fw, fitnames=c("Weibull")))
+  (stat.norm <- gofstat(fn, fitnames=c("Normal")))
+  (stat.exp <- gofstat(fexp, fitnames=c("Exponential")))
+  #(stat.cauchy <- gofstat(fcauch, fitnames=c("Cauchy")))
+
+  df.fit.stats[nrow(df.fit.stats) + 1,] <- GetFittingStats(month, 'bimonthly', 'Logistic', stat.log)
+  df.fit.stats[nrow(df.fit.stats) + 1,] <- GetFittingStats(month, 'bimonthly', 'Gamma', stat.gamma)
+  df.fit.stats[nrow(df.fit.stats) + 1,] <- GetFittingStats(month, 'bimonthly', 'Log-Normal', stat.lnorm)
+  df.fit.stats[nrow(df.fit.stats) + 1,] <- GetFittingStats(month, 'bimonthly', 'Weibull', stat.weib)
+  df.fit.stats[nrow(df.fit.stats) + 1,] <- GetFittingStats(month, 'bimonthly', 'Normal', stat.norm)
+  df.fit.stats[nrow(df.fit.stats) + 1,] <- GetFittingStats(month, 'bimonthly', 'Exponential', stat.exp)
+  
+  if (month == 1){
+    df.func.params <- as.data.frame(cbind(c(month, month), c(1,2), flog$estimate, fg$estimate, 
+                            fln$estimate,  fw$estimate, fn$estimate, fexp$estimate))
+
+  }
+  else{
+    df.func.params <- rbind(df.func.params, as.data.frame(cbind(c(month, month), c(1,2), flog$estimate, 
+                                        fg$estimate, fln$estimate, fw$estimate, 
+                                        fn$estimate, fexp$estimate)))
+  }
+
+  #goodness_fit_stats <- cbind(stat.log, stat.gamma, stat.lnorm, stat.weib, stat.norm, stat.exp, stat.cauchy )
+  #goodness_fit_stats
+}
+colnames(df.func.params) <- c('month', 'parameter','Logistic','Gamma', 'Log-Normal', 'Weibull', 'Normal', 'Exponential') 
+df.fit.stats
+
+#Save results
+file.path <- paste0("./output/tables/goodness_fit_stats_month_", month,".csv")
+write.csv(df.fit.stats, file.path, row.names = TRUE)
+
+file.path <- paste0("./output/tables/goodness_fit_params_month_", month,".csv")
+write.csv(df.func.params, file.path, row.names = TRUE)
+```
+Jan lognormal
+Feb	Normal
+Mar	logistic
+Apr	logistic
+May	Weibull
+Jun	Weibull
+Jul	Logistic
+Aug	Weibull
+Sep	Normal
+Oct	lognormal
+Nov	lognormal
+Dec	Normal
+
+
+```{r}
+arr.param01 <- array(0, dim=c(12,1))
+arr.param02 <- array(0, dim=c(12,1))
+arr.dist.months <- array(0, dim=c(12,1))
+
+#jan-lognonmal
+month = 1
+arr.dist.months[month] = "Log-Normal"
+arr.param01[month] = df.func.params$`Log-Normal`[df.func.params$month == month & df.func.params$parameter == 1]
+arr.param02[month] = df.func.params$`Log-Normal`[df.func.params$month == month & df.func.params$parameter == 2]
+
+#Feb	Normal
+month = 2
+arr.dist.months[month] = "Normal"
+arr.param01[month] = df.func.params$Normal[df.func.params$month == month & df.func.params$parameter == 1]
+arr.param02[month] = df.func.params$Normal[df.func.params$month == month & df.func.params$parameter == 2]
+
+#Mar	logistic
+month = 3
+arr.dist.months[month] = "Logistic"
+arr.param01[month] = df.func.params$Logistic[df.func.params$month == month & df.func.params$parameter == 1]
+arr.param02[month] = df.func.params$Logistic[df.func.params$month == month & df.func.params$parameter == 2]
+
+#Apr	logistic
+month = 4
+arr.dist.months[month] = "Logistic"
+arr.param01[month] = df.func.params$Logistic[df.func.params$month == month & df.func.params$parameter == 1]
+arr.param02[month] = df.func.params$Logistic[df.func.params$month == month & df.func.params$parameter == 2]
+
+
+#May	Weibull
+month = 5
+arr.dist.months[month] = "Weibull"
+arr.param01[month] = df.func.params$Weibull[df.func.params$month == month & df.func.params$parameter == 1]
+arr.param02[month] = df.func.params$Weibull[df.func.params$month == month & df.func.params$parameter == 2]
+
+
+#Jun	Weibull
+month = 6
+arr.dist.months[month] = "Weibull"
+arr.param01[month] = df.func.params$Weibull[df.func.params$month == month & df.func.params$parameter == 1]
+arr.param02[month] = df.func.params$Weibull[df.func.params$month == month & df.func.params$parameter == 2]
+
+
+#Jul	Logistic
+month = 7
+arr.dist.months[month] = "Logistic"
+arr.param01[month] = df.func.params$Logistic[df.func.params$month == month & df.func.params$parameter == 1]
+arr.param02[month] = df.func.params$Logistic[df.func.params$month == month & df.func.params$parameter == 2]
+
+
+#Aug	Weibull
+month = 8
+arr.dist.months[month] = "Weibull"
+arr.param01[month] = df.func.params$Weibull[df.func.params$month == month & df.func.params$parameter == 1]
+arr.param02[month] = df.func.params$Weibull[df.func.params$month == month & df.func.params$parameter == 2]
+
+#Sep	Normal
+month = 9
+arr.dist.months[month] = "Normal"
+arr.param01[month] = df.func.params$Normal[df.func.params$month == month & df.func.params$parameter == 1]
+arr.param02[month] = df.func.params$Normal[df.func.params$month == month & df.func.params$parameter == 2]
+
+#Oct	lognormal
+month = 10
+arr.dist.months[month] = "Log-Normal"
+arr.param01[month] = df.func.params$`Log-Normal`[df.func.params$month == month & df.func.params$parameter == 1]
+arr.param02[month] = df.func.params$`Log-Normal`[df.func.params$month == month & df.func.params$parameter == 2]
+
+#Nov	lognormal
+month = 11
+arr.dist.months[month] = "Log-Normal"
+arr.param01[month] = df.func.params$`Log-Normal`[df.func.params$month == month & df.func.params$parameter == 1]
+arr.param02[month] = df.func.params$`Log-Normal`[df.func.params$month == month & df.func.params$parameter == 2]
+
+#Dec	Normal
+month = 12
+arr.dist.months[month] = "Normal"
+arr.param01[month] = df.func.params$Normal[df.func.params$month == month & df.func.params$parameter == 1]
+arr.param02[month] = df.func.params$Normal[df.func.params$month == month & df.func.params$parameter == 2]
+
+#x_random <-runif(1000, 0.01, 0.99)
+#Lognormal quantiles function
+#y_qlnorm <- qlnorm(x_random, meanlog = arr.param01[1], sdlog = arr.param01[1], log = FALSE)  # Apply qlnorm function
+#y_qlnorm <- round(y_qlnorm, 0)
+
+#Normal quantiles function
+#y_qlnorm <- qnorm(x_random, mean=70,sd=3)
+#plot(y_qlnorm)  
+
+#Logistic quantile function
+#y_logis <- qlogis(x_random, location = 61.52141, scale = 1)
+#plot(y_logis) 
+
+#Weibull
+#y_qweibull <- qweibull(x_random, shape = 21.9115, scale = 62.45202)
+#plot(y_qweibull) 
+```
+
+
+```{r}
+
+GetSyntheticValues  <- function(month_function, month ,param01, param02, day){
+  if (month_function == "Log-Normal") {
+    synthetic.value <- qlnorm(runif(1, 0.01, 0.99), meanlog = param01, 
+                              sdlog = param02, log = FALSE)
+  }
+  
+  else if (month_function == "Logistic"){
+    synthetic.value <- qlogis(runif(1, 0.01, 0.99), location = param01, scale = param02)
+  }
+  
+  else if (month_function == "Normal"){
+    synthetic.value <- qnorm(runif(1, 0.01, 0.99), mean=param01, sd=param02)
+  }
+  
+  else if (month_function == "Weibull"){
+    synthetic.value <- qweibull(runif(1, 0.01, 0.99), shape = param01, scale = param02)
+  }
+  
+  else{
+   print(paste0("Function: ", month_function, " and month: ", month))
+    synthetic.value = day
+  }
+    
+  return(synthetic.value)
+};
+
+#
+df.enc.dwell.modif$dummy <- NA
+df.enc.dwell.modif$dummy <- ifelse(is.na(df.enc.dwell.modif$dummy), df.enc.dwell.modif$bill.days1.valid, df.enc.dwell.modif$dummy)
+
+n_bimonth_values = length(df.enc.dwell.modif$dummy[df.enc.dwell.modif$mes_inic1 == 1 & 
+                                                df.enc.dwell.modif$num_month_bill > 1.5 & 
+                                                df.enc.dwell.modif$num_month_bill <= 2.5])
+
+number_rows = nrow(df.enc.dwell.modif)
+x_random <-runif(number_rows, 0.01, 0.99)
+y_qlnorm <- qnorm(x_random, mean=70,sd=3)
+
+n_values <- 0
+
+summary(df.enc.dwell.modif$dummy)
+
+for (row in 1:nrow(df.enc.dwell.modif)) {
+    month <- df.enc.dwell.modif[row, "mes_inic1"]
+    days  <- df.enc.dwell.modif[row, "bill.days1.valid"]
+  
+    if(!is.na(month) & month >= 1 & is.na(days)) {
+      n_values = n_values + 1
+      df.enc.dwell.modif[row, "bill.days1.valid"] <- GetSyntheticValues(arr.dist.months[month], month,
+                                                        arr.param01[month], arr.param02[month], days);
+    }
+}
+print(paste0("# of rows: ",nrow(df.enc.dwell.modif)) )
+print(paste0("# of modified values: ", n_values))
+
+summary(df.enc.dwell.modif$bill.days1.valid)
+```
+
+```{r}
+#df.enc.dwell.modif$bill.days1.valid <- df.enc.dwell.modif$dummy
+#df.enc.dwell.modif$dummy <- NULL
+
+df.enc.dwell.modif$bill.days1.valid <- round(df.enc.dwell.modif$bill.days1.valid, 0)
+
+descr(df.enc.dwell.modif$bill.days1.valid, 
+      stats = c("mean", "sd", "min", "med", "max", "n.valid", "pct.valid"), 
+     # weights = df.enc.dwell$factor_sem,       
+      transpose = TRUE)
+```
+
+```{r}
+freq(df.enc.dwell.modif$bill.days1.valid)
+```
+
+```{r plt-histbimonth-after, fig.cap="Histograms of bi-monthly bills", warning=FALSE, message=FALSE, results="hold"}
+
+CreateBimonthBillHistPlots<-function(month, legend){
+  #Ref: https://plotly.com/r/text-and-annotations/
+  sample_size = sum(complete.cases(df.enc.dwell.modif$bill.days1.valid[df.enc.dwell.modif$mes_inic1 == month & df.enc.dwell.modif$num_month_bill > 1.5 & df.enc.dwell.modif$num_month_bill <= 2.5 ]), na.rm = TRUE)
+  
+  f <- list(
+  family = "Courier New, monospace",
+  size = 18,
+  color = "#7f7f7f ")
+  
+  a <- list(
+    x = 68,
+    y = 0.5,
+    text = paste0("n=", sample_size),
+    xref = "x",
+    yref = "y",
+    showarrow = FALSE,
+    arrowhead = 7,
+    ax = 20,
+    ay = -40,
+    titlefont = f)
+  
+  x <- list(
+    title = "x Axis",
+    titlefont = f)
+  
+  y <- list(
+    title = "y Axis",
+    titlefont = f)
+
+
+  fit <- density(df.enc.dwell.modif$bill.days1.valid[df.enc.dwell.modif$mes_inic1 == month & df.enc.dwell.modif$num_month_bill > 1.5 & df.enc.dwell.modif$num_month_bill <= 2.5 ], na.rm = TRUE)
+  
+  myplt <- plot_ly(x = df.enc.dwell.modif$bill.days1.valid[df.enc.dwell.modif$mes_inic1 == month & df.enc.dwell.modif$num_month_bill > 1.5 & 
+                                            df.enc.dwell.modif$num_month_bill <= 2.5 ],
+               type = "histogram",
+               histnorm = "probability",
+               name = legend) %>%
+      #add_trace(x = fit$x, y = fit$y, yaxis = "y2", name = "Density") %>%
+    layout(title = 'Distribution of Days Billed Reported by ENCEVI (Bi-Monthly Bills) - After Data Recovery',
+           xaxis = list(title = "days", range = c(50, 70)), 
+           yaxis = list(title = "Probability"),
+           legend = list(title = "month"),
+           #yaxis2 = list(overlaying = "y", side = "right")
+           annotations = a
+           )
+  myplt
+}
+
+
+plotList <- function(seq_months) {
+    lapply(seq_len(length(seq_months)), function(x) CreateBimonthBillHistPlots(seq_months))
+}
+
+s1 <- subplot(CreateBimonthBillHistPlots(1, 'jan'), CreateBimonthBillHistPlots(2, 'feb'), 
+              CreateBimonthBillHistPlots(3, 'mar'), CreateBimonthBillHistPlots(4, 'apr'), 
+              nrows = 1, shareX = TRUE, shareY = TRUE)
+
+s2 <- subplot(CreateBimonthBillHistPlots(5, 'may'), CreateBimonthBillHistPlots(6, 'jun'), 
+              CreateBimonthBillHistPlots(7, 'jul'), CreateBimonthBillHistPlots(8, 'aug'),  
+              nrows = 1, shareX = TRUE, shareY = TRUE)
+
+s3 <- subplot(CreateBimonthBillHistPlots(9, 'sep'), CreateBimonthBillHistPlots(10, 'oct'), 
+              CreateBimonthBillHistPlots(11, 'nov'), CreateBimonthBillHistPlots(12, 'dec'),  
+              nrows = 1, shareX = TRUE, shareY = TRUE)
+
+f <- list(
+  family = "Courier New, monospace",
+  size = 18,
+  color = "#7f7f7f ")
+  
+x <- list(
+  title = "x Axis",
+  titlefont = f)
+
+y <- list(
+  title = "y Axis",
+  titlefont = f)
+
+fig <- subplot(s1, s2, s3, nrows = 3, margin = 0.04, heights = c(0.33, 0.33, 0.34)) 
+fig
+
+plotly_IMAGE(fig, format = "png", 
+             out_file = "./output/fig/hist_bill_period_per_month_bimonthly_after.png")
+```
+**Save Dataset with data recovered**
+```{r}
+df.enc.dwell.modif <- subset (df.enc.dwell.modif, 
+                             select = -c(dummy, final.y, mes_final.y, inicia.y, 
+                                          mes_inic.y, final.x, mes_final.x, 
+                                          inicia.x, mes_inic.x))
+
+df.enc.dwell.modif$bill.period1 <- NULL
+df.enc.dwell.modif$bill.period1[df.enc.dwell$num_month_bill > 0.95 & df.enc.dwell$num_month_bill <= 1.5] <- 1
+df.enc.dwell.modif$bill.period1[df.enc.dwell$num_month_bill > 1.5 & df.enc.dwell$num_month_bill <= 2.5] <- 2
+
+df.enc.dwell.modif$bill.period1 <- factor(df.enc.dwell.modif$bill.period1,
+                               levels = c(1, 2),
+                               labels = c("monthly", "bi-monthly"))
+```
+
 
 ```{r tbl-bill1-days, fig.cap=table_captions("tbl_bill1_days", "Days included in electricity  bill"), results="hold"}
-tb.stat.bill.days1 <- descr(df.enc.dwell[ ,c("bill.days1", "bill.days1.valid")], 
-                         weights = df.enc.dwell$factor_sem,
+tb.stat.bill.days1 <- descr(df.enc.dwell.modif[ ,c("bill.days1", "bill.days1.valid")], 
+                         weights = df.enc.dwell.modif$factor_sem,
                          round.digits = 2,
                          style = "rmarkdown",  transpose = TRUE, 
                          stats = c("mean", "med", "sd", "min", "max", 
@@ -424,38 +1153,41 @@ knitr::kable(tb.stat.bill.days1,
 
 tb.stat.bill.days1$percent.valid <-tb.stat.bill.days1$`% Valid`
 ```
-*The Federal Electricity Commission (CFE) bills their residential customers every month or every two months.* The period of time between bills for monthly accounts is between 27-35 days and the period between bills for bi-monthly accounts is between 56-65 days. Bills that are outside these ranges usually include special fees (i.e late fees, installation fees, etc) or were issued incorrectly. So, in this analysis we discarted the information from bills outside these ranges. Based on this rule, we found that only `r format(tb.stat.bill.days1['bill.days1.valid', 'N.Valid'], big.mark=",")` households represented by the survey (`r round(tb.stat.bill.days1['bill.days1.valid', 'percent.valid'], 2)`%) can be considered as records (See `r t.ref("tbl_bill1_days")`).
+
+*The Federal Electricity Commission (CFE) bills their residential customers every month or every two months.* The period of time between bills for monthly accounts is between 27-35 days and the period between bills for bi-monthly accounts is between 56-65 days. Bills that are outside these ranges usually include special fees (i.e late fees, installation fees, etc) or were issued incorrectly. So, in this analysis we discarded the information from bills outside these ranges. Based on this rule, we found that only `r format(tb.stat.bill.days1['bill.days1.valid', 'N.Valid'], big.mark=",")` households represented by the survey (`r round(tb.stat.bill.days1['bill.days1.valid', 'percent.valid'], 2)`%) can be considered as records (See `r t.ref("tbl_bill1_days")`).
 
 
 ```{r, eval=FALSE, results="asis"}
+options( survey.lonely.psu = "adjust" )
+
 svd.dwell <- svydesign(id=~upm, strata=~est_dis, 
-                 data=df.enc.dwell, weights=~factor_sem)
+                 data=df.enc.dwell.modif, weights=~factor_sem)
 
-## Estimating number of dwellings connected to the grid
-mean <- svymean(~bill.days1, svd.dwell, na.rm=TRUE)
+## Estimating average billed days
+mean <- svymean(~bill.days1.valid, svd.dwell, na.rm=TRUE)
+variance <- svyvar(~bill.days1.valid, svd.dwell, na.rm=TRUE)
 
-variance <- svyvar(~bill.days1, svd.dwell, na.rm=TRUE)
-#svytotal(~bill.days1, svd.dwell, na.rm=TRUE)
-quantiles <- svyquantile(~bill.days1, svd.dwell, c(.25,.5,.75),ci=TRUE, na.rm=TRUE)
+quantiles <- svyquantile(~bill.days1.valid, svd.dwell, c(.25,.5,.75),ci=TRUE, na.rm=TRUE)
 ```
 
 **Monthly or Bi-mothly Periodicity**
 ```{r}
-df.enc.dwell$bill.period1 <- NULL
-df.enc.dwell$bill.period1[df.enc.dwell$bill.days1.valid <= 45] <- 1
-df.enc.dwell$bill.period1[df.enc.dwell$bill.days1.valid >= 50] <- 2
+freq(df.enc.dwell.modif$bill.period1, report.nas = TRUE, 
+                       style = "rmarkdown",  
+                       headings = FALSE, na.rm = TRUE)
+```
 
-df.enc.dwell$bill.period1 <- factor(df.enc.dwell$bill.period1,
-                               levels = c(1, 2),
-                               labels = c("monthly", "bi-monthly"))
 
-tb.bill.period <- freq(df.enc.dwell$bill.period1, report.nas = TRUE, 
-                       style = "rmarkdown", weights = df.enc.dwell$factor_sem, 
+
+```{r}
+tb.bill.period <- freq(df.enc.dwell.modif$bill.period1, report.nas = TRUE, 
+                       style = "rmarkdown", weights = df.enc.dwell.modif$factor_sem, 
                        headings = FALSE, na.rm = TRUE)
 
 tb.bill.period <- as.data.frame(tb.bill.period)
 tb.bill.period$percent.valid <-tb.bill.period$`% Total`
 ```
+
 
 As shown in the `r t.ref("tbl_bill1_period")` most o the households represented by ENCEVI have bi-monthly bills (`r round (tb.bill.period['bi-monthly','percent.valid'], 2)`%).
 
@@ -467,755 +1199,28 @@ kable(tb.bill.period, label = 'table-bill1-period', digits = 3,
   kable_styling(bootstrap_options = c("striped", "hover",
                                       "condensed", "responsive"),
                 fixed_thead = TRUE)
+
+write.csv(tb.bill.period,"./output/tables/tb.bill.period.csv", row.names = FALSE)
 ```
 
-## Periodicity of 2nd. Electricity Bill 
-Some households pay two electricity bills, because of their consumption or because they have some special needs (i.e. they divided their dwelling consumption to rent a section of their home). So, we calculated the days of consumption of these hoouseholds *(CFE customers that pay two electricity bills each period)*.
-
+### Store Results
 ```{r}
-df.enc.dwell$mes_inic2[df.enc.dwell$mes_inic == 99] <- NA
-df.enc.dwell$mes_final2[df.enc.dwell$mes_final2 == 99] <- NA
-df.enc.dwell$inicia2[df.enc.dwell$inicia2 == 99] <- NA
-df.enc.dwell$final2[df.enc.dwell$final2 == 99] <- NA
-
-df.bill.dates <- subset(df.enc.dwell,
-                        select=c(folio, mes_inic2, inicia2, mes_final2, final2))
-
-setnames(df.bill.dates, 
-         old=c("mes_inic2", "inicia2", "mes_final2", "final2"), 
-         new=c("mes_inic", "inicia", "mes_final", "final"))
-
-df.bill.dates <- GetBillPeriodicity (df.bill.dates)
-
-df.enc.dwell <- merge(df.enc.dwell, df.bill.dates, by="folio")
-
-setnames(df.enc.dwell, 
-         old=c("bill.days","bill.days.valid", "bill.ini.date", 
-               "bill.end.date", "year.ini", "year.end"), 
-         new=c("bill.days2", "bill.days2.valid", "bill.ini.date2", 
-               "bill.end.date2", "year.ini2", "year.end2"))
+file.path <- paste0("./output/df_dwelling_recover.csv")
+write.csv(df.enc.dwell.modif, file.path, row.names = TRUE, na="")
 ```
 
 
 
-```{r table-bill-days2, fig.cap=table_captions("table_bill_days2", "Days included in electricity  bill")}
-tb.stat.bill.days2 <- descr(df.enc.dwell[ ,c("bill.days2", "bill.days2.valid")], 
-                         weights = df.enc.dwell$factor_sem,
-                         round.digits = 2,
-                         style = "rmarkdown",  transpose = TRUE, 
-                         stats = c("mean", "med", "sd", "min", "max", 
-                                   "n.valid", "pct.valid"),
-                         headings = TRUE)
 
-tb.stat.bill.days2 <- as.data.frame(tb.stat.bill.days2)
 
-knitr::kable(tb.stat.bill.days2, 
-      label = 'table-bill1-days', digits = 2, align = 'l', booktabs = TRUE,
-  caption = paste(t.ref("table_bill_days2"),'Days included in electricity  bill')) %>%
-  kable_styling(bootstrap_options = c("striped", "hover", 
-                                      "condensed", "responsive"),
-                fixed_thead = T, full_width = F)
 
-tb.stat.bill.days2$percent.valid <-tb.stat.bill.days2$`% Total`
-```
 
-```{r}
-## Getting periodicity of second bill
-df.enc.dwell$bill.period2 <- NULL
 
-df.enc.dwell$bill.period2[df.enc.dwell$bill.days1.valid <= 45] <- 1
-df.enc.dwell$bill.period2[df.enc.dwell$bill.days1.valid >= 50] <- 2
 
 
-df.enc.dwell$bill.period2 <- factor(df.enc.dwell$bill.period2,
-                               levels = c(1, 2),
-                               labels = c("monthly", "bi-monthly"))
-```
 
-- After keeping only the bills (households that reported paying two bills) that can be correctly classified as monthly or bi-monthly bills, we found that the percent of households represented by ENCEVI's survey that should be considered is only r round(tb.stat.bill.days2['bill.days2.valid', 'percent.valid'],2)%. As this is a very small postion of the households represented by ENCEVI we didn't developed the whole analysis of these cases.
 
-```{r, include = FALSE}
-#just for debugging
-df.bill.test <- subset(df.enc.dwell,
-                        select=c('folio', 'ageem.id', 'grid', 'bill.days1', 
-                                 'bill.ini.date1', 'bill.end.date1',
-                                 'bill.days2', 'bill.ini.date2', 
-                                 'bill.end.date2', 'cons_med1', 'cons_med2', 
-                                 'cond_energ', 'local_com', 'elect_loc',
-                                 'tariff', 'tipo_tarif', 'region.tariff',
-                                 'bill.days1.valid', 'bill.days2.valid'))
 
-#sort(df.bill.error$bill.days1,decreasing=FALSE)
-#df.bill.test[order(-df.bill.test$bill.days1),]
-```
-
-
-```{r, inlcude= FALSE}
-#just for debugging
-datatable(df.bill.test[order(-df.bill.test$bill.days1),], 
-          rownames = FALSE,
-          options = list(
-            dom = 'tip',
-            scrollX = TRUE,
-            fixedColumns = TRUE
-            ))
-```
-
-## Total Amount Paid in Each Bill
-To clean the data related to the amount paid in each electricity bill, we discarted the records of bills that have values below the minimum payment as well as the records that have extremely high values.
-```{r, results=FALSE}
-df.enc.dwell$bill.amount1 <- df.enc.dwell$cons_med1
-df.enc.dwell$bill.amount.day1 <- NA
-
-#The minimum payment in a month would be 25 KWh * the minimum rate per KWh (MXN$0.697) + tax (IVA, 16%) =~ MXN$20.00
-df.enc.dwell$bill.amount1[df.enc.dwell$bill.amount1 <= 20.0 ] <- NA
-df.enc.dwell$bill.amount1[df.enc.dwell$bill.amount1 > 49999.0 ] <- NA
-
-summary(df.enc.dwell$bill.amount1)
-```
-
-```{r tbl-stats-bill-amount, message = FALSE}
-stat.bill.amount.mo <- descr(df.enc.dwell$bill.amount1[df.enc.dwell$bill.period1=="monthly"], 
-                           weights = df.enc.dwell$factor_sem[df.enc.dwell$bill.period1=="monthly"], 
-                           round.digits = 3,
-                           stats = c("n.valid", "mean", "sd", 
-                                     "min", "med", "max", "pct.valid"), 
-                           transpose = TRUE)
-
-stat.bill.amount.bi <- descr(df.enc.dwell$bill.amount1[df.enc.dwell$bill.period1=="bi-monthly"], 
-                           weights = df.enc.dwell$factor_sem[df.enc.dwell$bill.period1=="bi-monthly"], 
-                           round.digits = 3,
-                           stats = c("n.valid","mean", "sd", "min", 
-                                     "med", "max", "pct.valid"), 
-                           transpose = TRUE)
-
-stat.bill.amount <- rbind(stat.bill.amount.mo, stat.bill.amount.bi)
-
-row.names(stat.bill.amount) <- c("monthly", "bi-monthly")
-
-knitr::kable(stat.bill.amount, 
-      label = 'table-stats-bill-amount', digits = 3, 
-      align = 'c', booktabs = TRUE,
-  caption = 'Summary statistics of bill amount ($MXN)') %>%
-  kable_styling(bootstrap_options = c("striped", "hover", 
-                                      "condensed", "responsive"),
-                fixed_thead = T) %>%
-  scroll_box(width = "100%")
-```
-
-## Estimating Taxes Included in Bills
-
-**Value Added Tax (aka. IVA)**
-
-Each electricity billl in Mexico includes a 16% value added tax, known as IVA. Since 2019, some cities located at Mexico's Northern border pay only 8% VAT. But as the information analyzed here is from 2017- 2018, we don't need to consider this situation.
-```{r}
-df.enc.dwell$tax.vat1 <- df.enc.dwell$bill.amount1 * 0.016
-```
-
-**DAP Tax (Public street lighting system tax)**
-
-Information about DAP tax was imported from file _tariffs_dap_tax.csv_. Here, these data is merged with the data from ENCEVI using the variable with the municipalities ids (*ageem.id*).
-
-There are 6 different ways in which the DAP tax is charged:
-
-1. Fixed.
-2. Fixed & Range.
-3. Percentage.
-4. Percentage & Fixed. _(there are not values that use this method in our sample)_
-5. Range.
-6. Range in percent.
-
-```{r, results= "hide"}
-df.enc.dwell <- merge(df.enc.dwell, df.dap.tax, by="ageem.id", all.x = TRUE)
-summary(df.dap.tax)
-```
-
-```{r, message = FALSE, results= "hide"}
-df.enc.dwell$tax.dap.min1 <- NA
-df.enc.dwell$tax.dap.max1 <- NA
-df.enc.dwell$tax.dap1 <- NA
-
-attach(df.enc.dwell)
-# 1. If the method used to get the dap tax is Fix, the value of tax.dap, 
-# tax.dap.min, and tax.dap.max are equal to tax.dap.value 
-df.enc.dwell$tax.dap1 <- ifelse(tax.dap.method == "Fix", 
-                                tax.dap.value, tax.dap1)
-df.enc.dwell$tax.dap.min1 <- ifelse(tax.dap.method == "Fix", 
-                                    tax.dap.value, tax.dap.min1)
-df.enc.dwell$tax.dap.max1 <- ifelse(tax.dap.method == "Fix", 
-                                    tax.dap.value, tax.dap.max1)
-detach(df.enc.dwell)
-summary(df.enc.dwell$tax.dap1)
-summary(df.enc.dwell$tax.dap.min1)
-summary(df.enc.dwell$tax.dap.max1)
-```
-
-```{r, message = FALSE, results= "hide"}
-# 2. If the method used to get the dap tax is Percent, the value of tax.dap, 
-# tax.dap.min, and tax.dap.max are equal to tax.dap.percent*bill.amount1
-attach(df.enc.dwell)
-df.enc.dwell$tax.dap1 <- ifelse(tax.dap.method == "Percent", 
-                                tax.dap.percent * bill.amount1, tax.dap1)
-df.enc.dwell$tax.dap.min1 <- ifelse(tax.dap.method == "Percent", 
-                                    tax.dap.percent * bill.amount1, tax.dap.min1)
-df.enc.dwell$tax.dap.max1 <- ifelse(tax.dap.method == "Percent", 
-                                    tax.dap.percent * bill.amount1, tax.dap.max1)
-detach(df.enc.dwell)
-summary(df.enc.dwell$tax.dap1)
-summary(df.enc.dwell$tax.dap.min1)
-summary(df.enc.dwell$tax.dap.max1)
-```
-```{r, message = FALSE, results= "hide"}
-# 3. If the method used to get the dap tax is Range, the value of tax.dap, 
-# tax.dap.min, and tax.dap.max are equal to tax.dap.method, 
-# tax.dap.min.range, and tax.dap.max.range respectively
-attach(df.enc.dwell)
-df.enc.dwell$tax.dap1 <- ifelse(tax.dap.method == "Range", 
-                                tax.dap.avg.range, tax.dap1)
-df.enc.dwell$tax.dap.min1 <- ifelse(tax.dap.method == "Range", 
-                                    tax.dap.min.range, tax.dap.min1)
-df.enc.dwell$tax.dap.max1 <- ifelse(tax.dap.method == "Range", 
-                                    tax.dap.max.range, tax.dap.max1)
-detach(df.enc.dwell)
-summary(df.enc.dwell$tax.dap1)
-summary(df.enc.dwell$tax.dap.min1)
-summary(df.enc.dwell$tax.dap.max1)
-```
-
-```{r, message = FALSE, results= "hide"}
-# 4. If the method used to get the dap tax is Range.percent, the value of 
-# tax.dap, tax.dap.min, and tax.dap.max are equal to tax.dap.percent, 
-# tax.dap.min.range, and tax.dap.max.range (times bill.amount1) respectively
-attach(df.enc.dwell)
-df.enc.dwell$tax.dap1 <- ifelse(tax.dap.method == "Range.percent",
-                                tax.dap.percent * bill.amount1, tax.dap1)
-df.enc.dwell$tax.dap.min1 <- ifelse(tax.dap.method == "Range.percent",
-                                    tax.dap.min.range * bill.amount1, tax.dap.min1)
-df.enc.dwell$tax.dap.max1 <- ifelse(tax.dap.method == "Range.percent",
-                                    tax.dap.max.range * bill.amount1, tax.dap.max1)
-detach(df.enc.dwell)
-summary(df.enc.dwell$tax.dap1)
-summary(df.enc.dwell$tax.dap.min1)
-summary(df.enc.dwell$tax.dap.max1)
-```
-
-```{r, message = FALSE, results= "hide"}
-# 5. If the method used to get the dap tax is Percent&Fix, the value of 
-# tax.dap, and tax.dap.min are equal to the minimum value between 
-# tax.dap.value and tax.dap.percent * bill.amount1). While tax.dap.min 
-# is equal the maximum value  between tax.dap.value and 
-# tax.dap.percent * bill.amount1).
-attach(df.enc.dwell)
-df.enc.dwell$tax.dap.min1 <- ifelse(tax.dap.method == "Percent.fix",
-                                    apply(df.enc.dwell[, c("tax.dap.percent", 
-                                                           "bill.amount1")], 
-                                          1, prod), tax.dap.min1)
-
-df.enc.dwell$tax.dap.max1 <- ifelse(tax.dap.method == "Percent.fix",
-                                    apply(df.enc.dwell[, c("tax.dap.min1", 
-                                                           "tax.dap.value")], 
-                                          1, max), tax.dap.max1)
-
-df.enc.dwell$tax.dap1 <- ifelse(tax.dap.method == "Percent.fix",
-                                    apply(df.enc.dwell[, c("tax.dap.min1", 
-                                                           "tax.dap.value")], 
-                                          1, min), tax.dap1)
-
-df.enc.dwell$tax.dap.min1 <- ifelse(tax.dap.method=="Percent.fix",
-                                    tax.dap1, tax.dap.min1)
-detach(df.enc.dwell)
-
-df.enc.dwell$tax.dap1 <- unlist(df.enc.dwell$tax.dap1)
-
-summary(df.enc.dwell$tax.dap1)
-summary(df.enc.dwell$tax.dap.min1)
-summary(df.enc.dwell$tax.dap.max1)
-```
-
-## Defining Summer Months
-According to the information provided by Federal Electricity Commission (CFE) under the personal request UT/SAIP/1630/19 (June, 18, 2019). The seasonal dates summer months in the residential sector are defined as follows:
-
-- **Baja California**: From the first Sunday of May to the Saturday before the last Sunday of October.
-- **Baja California Sur**: From the first Sunday of April to the Saturday before the last Sunday of October.
-- **National Interconnected System**: From the first Sunday of April to the Saturday before the last Sunday of October.
-
-```{r}
-df.summer.months
-# Merging values by tariff region
-df.enc.dwell <- merge(df.enc.dwell, df.summer.months, by="region.tariff.f", all.x =TRUE)
-```
-
-**Bills that have summer tariffs**
-```{r tbl-bill-issummer, results="hold"}
-df.enc.dwell$is.summer1 <- NA
-
-df.enc.dwell$is.summer1 <- unlist(lapply(
-  df.enc.dwell$mes_inic1 >= df.enc.dwell$summer.start.month & 
-    df.enc.dwell$mes_final1 <= df.enc.dwell$summer.end.month & 
-    df.enc.dwell$year.ini1 == df.enc.dwell$year.end1 &
-  df.enc.dwell$mes_inic1 <= df.enc.dwell$mes_final1, 
-  function (...)  Reduce("&", list(...)) ))
-
-df.enc.dwell$is.summer1[df.enc.dwell$is.summer1==TRUE] <- 1
-df.enc.dwell$is.summer1[df.enc.dwell$is.summer1==FALSE] <- 2
-
-df.enc.dwell$is.summer1 <- factor(df.enc.dwell$is.summer1,
-                                levels = c(1, 2),
-                                labels = c("Yes", "No"))
-
-tb.bill.is.summer <- freq(df.enc.dwell$is.summer1, 
-                         weight = df.enc.dwell$factor_sem, report.nas = F, 
-                         plain.ascii = F, style = "simple", method = "render",
-                         headings = F, na.rm= T)
-
-knitr::kable(tb.bill.is.summer, 
-      label = 'table-bill-issummer', digits = 2, align = 'l', booktabs = T,
-  caption = 'Bills that have summer tariffs') %>%
-  kable_styling(bootstrap_options = c("striped", "hover", 
-                                      "condensed", "responsive"),
-                fixed_thead = T, full_width = F)
-
-tb.bill.is.summer <- as.data.frame(tb.bill.is.summer)
-
-colnames(tb.bill.is.summer)[colnames(tb.bill.is.summer)=="% Valid"] <- "valid.percent"
-```
-- Only  (`r round(tb.bill.is.summer$valid.percent[1],2)`%) of the households represented by the ENCEVI's survey had bills with summer tariffs.\
-
-```{r, include = FALSE}
-# Just for debugging and validation
-df.test <- subset(df.enc.dwell,
-                        select=c('folio', 'is.summer1', 'mes_inic1', 
-                                 'mes_final1', 'year.ini1', 'year.end1',
-                                 'summer.start.month', 'summer.end.month', 
-                                 'bill.days1.valid'))
-
-datatable(df.test[order(-df.test$mes_inic1),], 
-          rownames = FALSE,
-          options = list(
-            #dom = 'tip',
-            scrollX = TRUE,
-            fixedColumns = TRUE
-            ))
-```
-
-***Computing amount paid for electricity*** 
-Total bill amount minus taxes and fees
-```{r}
-#Calculating amount paid for electricity without taxes
-df.enc.dwell$bill.min1.notax <- df.enc.dwell$bill.amount1 - rowSums(df.enc.dwell[,c("tax.dap.min1","tax.vat1")], na.rm=TRUE)
-df.enc.dwell$bill.avg1.notax <- df.enc.dwell$bill.amount1 - rowSums(df.enc.dwell[,c("tax.dap1","tax.vat1")], na.rm=TRUE)
-df.enc.dwell$bill.max1.notax <- df.enc.dwell$bill.amount1 - rowSums(df.enc.dwell[,c("tax.dap.max1","tax.vat1")], na.rm=TRUE)
-
-df.enc.dwell$bill.min1.notax[df.enc.dwell$bill.min1.notax < 0] <- NA
-df.enc.dwell$bill.avg1.notax[df.enc.dwell$bill.avg1.notax < 0] <- NA
-df.enc.dwell$bill.max1.notax[df.enc.dwell$bill.max1.notax < 0] <- NA
-```
-
-```{r}
-df.bill <- subset(df.enc.dwell,
-                  select=c('folio', 'tipo_tarif', 'tipo_tarif.f', 'is.summer1',
-                            'bill.period1', 'bill.days1.valid', 
-                           'bill.amount1', 'tax.dap1', 'tax.dap.min1', 
-                           'tax.dap.max1', 'tax.vat1', 'bill.min1.notax', 
-                           'bill.avg1.notax', 'bill.max1.notax',
-                           'inicia1', 'inicia2',
-                           'mes_inic1', 'mes_inic2', 'year.ini1', 'year.ini2',
-                           'year.end1', 'year.end2', 'mes_final1', 'mes_final2'))
-```
-
-In average, Mexican households paid (`r round(df.enc.dwell$bill.avg1.notax,2)`%)  per bill 
-
-## Computing Electricity Consumption
-
-**Low Consumption Values**
-```{r, results="hide"}
-df.bill$tariff.block <- NA
-df.bill$cons.kwh <- NA
-df.bill$cons.kwh.low1 <- NA
-
-# Obtaining minimum values
-df.bill$bill.notax <- df.bill$bill.max1.notax
-
-summer.bills = "No"
-bill.periodicity = "monthly"
-tariffs <- c("1", "1A", "1B", "1C", "1D", "1E", "1F")
-
-df.bill.tmp <- NA  
-df.bill.kwh <- NA
-
-for (tariff in tariffs) {
-  df.bill.tmp <- EstimateBillConsumptionKWh(df.bill, df.tariff.cost, 
-                                            bill.periodicity, tariff, 
-                                            summer.bills)
-  if (!is.na(df.bill.kwh)){
-    df.bill.kwh <- rbind(df.bill.kwh, df.bill.tmp) 
-  }else{
-    df.bill.kwh <- df.bill.tmp
-  }
-}
-
-summer.bills = "Yes"
-bill.periodicity = "monthly"
-for (tariff in tariffs) {
-  df.bill.tmp <- EstimateBillConsumptionKWh(df.bill, df.tariff.cost, 
-                                            bill.periodicity, tariff, 
-                                            summer.bills)
-  df.bill.kwh <- rbind(df.bill.kwh, df.bill.tmp) 
-}
-
-summer.bills = "No"
-bill.periodicity = "bi-monthly"
-for (tariff in tariffs) {
-  df.bill.tmp <- EstimateBillConsumptionKWh(df.bill, df.tariff.cost, 
-                                            bill.periodicity, tariff, 
-                                            summer.bills)
-  df.bill.kwh <- rbind(df.bill.kwh, df.bill.tmp) 
-}
-
-summer.bills = "Yes"
-bill.periodicity = "bi-monthly"
-for (tariff in tariffs) {
-  df.bill.tmp <- EstimateBillConsumptionKWh(df.bill, df.tariff.cost, 
-                                            bill.periodicity, tariff, 
-                                            summer.bills)
-  df.bill.kwh <- rbind(df.bill.kwh, df.bill.tmp) 
-}
-
-df.bill.kwh$cons.kwh.low1 <- df.bill.kwh$cons.kwh
-
-datatable(df.bill.kwh[order(df.bill.kwh$tipo_tarif),], 
-          rownames = FALSE,
-          options = list(
-            #dom = 'tip',
-            scrollX = TRUE,
-            fixedColumns = TRUE
-            ))
-```
-
-
-```{r}
-df.enc.dwell.bill <- NA
-colnames(df.bill.kwh)[colnames(df.bill.kwh)=="tariff.block"] <- "tariff.block.low1"
-
-df.bill.kwh <- df.bill.kwh[order(df.bill.kwh$folio),]
-df.enc.dwell <- df.enc.dwell[order(df.enc.dwell$folio),]
-
-df.enc.dwell.bill <- merge(x = df.enc.dwell, 
-                           y = df.bill.kwh[ , c("folio", "tariff.block.low1", "cons.kwh.low1")], 
-                           by = "folio", all.x=TRUE)
-```
-
-**High Consumption Values**
-```{r, results="hide"}
-df.bill$tariff.block <- NA
-df.bill$cons.kwh <- NA
-
-df.bill$cons.kwh.hig1 <- NA
-
-#obtaining minimum values
-df.bill$bill.notax <- df.bill$bill.min1.notax
-
-summer.bills = "No"
-bill.periodicity = "monthly"
-tariffs <- c("1", "1A", "1B", "1C", "1D", "1E", "1F")
-
-df.bill.tmp <- NA  
-df.bill.kwh <- NA
-
-for (tariff in tariffs) {
-  df.bill.tmp <- EstimateBillConsumptionKWh(df.bill, df.tariff.cost, 
-                                            bill.periodicity, tariff, 
-                                            summer.bills)
-  if (!is.na(df.bill.kwh)){
-    df.bill.kwh <- rbind(df.bill.kwh, df.bill.tmp) 
-  }else{
-    df.bill.kwh <- df.bill.tmp
-  }
-}
-
-summer.bills = "Yes"
-bill.periodicity = "monthly"
-for (tariff in tariffs) {
-  df.bill.tmp <- EstimateBillConsumptionKWh(df.bill, df.tariff.cost, 
-                                            bill.periodicity, tariff, 
-                                            summer.bills)
-  df.bill.kwh <- rbind(df.bill.kwh, df.bill.tmp) 
-}
-
-summer.bills = "No"
-bill.periodicity = "bi-monthly"
-for (tariff in tariffs) {
-  df.bill.tmp <- EstimateBillConsumptionKWh(df.bill, df.tariff.cost, 
-                                            bill.periodicity, tariff, 
-                                            summer.bills)
-  df.bill.kwh <- rbind(df.bill.kwh, df.bill.tmp) 
-}
-
-summer.bills = "Yes"
-bill.periodicity = "bi-monthly"
-for (tariff in tariffs) {
-  df.bill.tmp <- EstimateBillConsumptionKWh(df.bill, df.tariff.cost, 
-                                            bill.periodicity, tariff, 
-                                            summer.bills)
-  df.bill.kwh <- rbind(df.bill.kwh, df.bill.tmp) 
-}
-
-#remove auxiliary dataframe
-rm(df.bill.tmp)
-
-df.bill.kwh$cons.kwh.hig1 <- df.bill.kwh$cons.kwh
-
-datatable(df.bill.kwh[order(df.bill.kwh$tipo_tarif),], 
-          rownames = FALSE,
-          options = list(
-            #dom = 'tip',
-            scrollX = TRUE,
-            fixedColumns = TRUE
-            ))
-```
-
-```{r}
-colnames(df.bill.kwh)[colnames(df.bill.kwh)=="tariff.block"] <- "tariff.block.hig1"
-
-df.bill.kwh <- df.bill.kwh[order(df.bill.kwh$folio),]
-df.enc.dwell.bill <- df.enc.dwell.bill[order(df.enc.dwell.bill$folio),]
-
-df.enc.dwell.bill <- merge(x = df.enc.dwell.bill, 
-                           y = df.bill.kwh[ , c("folio", "tariff.block.hig1", "cons.kwh.hig1")], 
-                           by = "folio", all.x=TRUE)
-```
-
-**Medium Consumption Values**
-```{r, warning = FALSE, results="hide"}
-df.bill$tariff.block <- NA
-df.bill$cons.kwh <- NA
-df.bill$cons.kwh.med1 <- NA
-
-#obtaining medium values
-df.bill$bill.notax <- df.bill$bill.avg1.notax
-
-summer.bills = "No"
-bill.periodicity = "monthly"
-tariffs <- c("1", "1A", "1B", "1C", "1D", "1E", "1F")
-
-df.bill.tmp <- NA  
-df.bill.kwh <- NA
-
-for (tariff in tariffs) {
-  df.bill.tmp <- EstimateBillConsumptionKWh(df.bill, df.tariff.cost, 
-                                            bill.periodicity, tariff, 
-                                            summer.bills)
-  if (!is.na(df.bill.kwh)){
-    df.bill.kwh <- rbind(df.bill.kwh, df.bill.tmp) 
-  }else{
-    df.bill.kwh <- df.bill.tmp
-  }
-}
-
-summer.bills = "Yes"
-bill.periodicity = "monthly"
-for (tariff in tariffs) {
-  df.bill.tmp <- EstimateBillConsumptionKWh(df.bill, df.tariff.cost, 
-                                            bill.periodicity, tariff, 
-                                            summer.bills)
-  df.bill.kwh <- rbind(df.bill.kwh, df.bill.tmp) 
-}
-
-summer.bills = "No"
-bill.periodicity = "bi-monthly"
-for (tariff in tariffs) {
-  df.bill.tmp <- EstimateBillConsumptionKWh(df.bill, df.tariff.cost, 
-                                            bill.periodicity, tariff, 
-                                            summer.bills)
-  df.bill.kwh <- rbind(df.bill.kwh, df.bill.tmp) 
-}
-
-summer.bills = "Yes"
-bill.periodicity = "bi-monthly"
-for (tariff in tariffs) {
-  df.bill.tmp <- EstimateBillConsumptionKWh(df.bill, df.tariff.cost, 
-                                            bill.periodicity, tariff, 
-                                            summer.bills)
-  df.bill.kwh <- rbind(df.bill.kwh, df.bill.tmp) 
-}
-
-df.bill.kwh$cons.kwh.med1 <- df.bill.kwh$cons.kwh
-
-rm(df.bill.tmp)
-```
-
-```{r}
-colnames(df.bill.kwh)[colnames(df.bill.kwh)=="tariff.block"] <- "tariff.block.med1"
-
-df.bill.kwh <- df.bill.kwh[order(df.bill.kwh$folio),]
-df.enc.dwell.bill <- df.enc.dwell.bill[order(df.enc.dwell.bill$folio),]
-
-df.enc.dwell.bill <- merge(x = df.enc.dwell.bill, 
-                           y = df.bill.kwh[ , c("folio", "tariff.block.med1", "cons.kwh.med1")], 
-                           by = "folio", all.x=TRUE)
-
-# Only values above 25KWh are considered as valid, as CFE charges their consumers
-# 25KWh per bill, even if the consumption is zero. So any bill with a charge 
-# below 25 KWh doesn't seem correct.
-df.enc.dwell.bill$cons.kwh.low1[df.enc.dwell.bill$cons.kwh.low1 < 25.00] <- NA
-df.enc.dwell.bill$cons.kwh.med1[df.enc.dwell.bill$cons.kwh.med1 < 25.00] <- NA
-df.enc.dwell.bill$cons.kwh.hig1[df.enc.dwell.bill$cons.kwh.hig1 < 25.00] <- NA
-
-#after merging all the values, we don't need this dataframe 
-rm(df.bill.kwh)
-```
-
-## Electricity Consumption Results
-### Daily Electricity Consumption
-```{r}
-df.enc.dwell.bill$cons.day.kwh.low1 <- df.enc.dwell.bill$cons.kwh.low1 / 
-  df.enc.dwell.bill$bill.days1.valid
-
-df.enc.dwell.bill$cons.day.kwh.med1 <- df.enc.dwell.bill$cons.kwh.med1 / 
-  df.enc.dwell.bill$bill.days1.valid
-
-df.enc.dwell.bill$cons.day.kwh.hig1 <- df.enc.dwell.bill$cons.kwh.hig1 / 
-  df.enc.dwell.bill$bill.days1.valid
-
-df.enc.dwell.bill$cons.month.kwh.low1 <- df.enc.dwell.bill$cons.day.kwh.low1 * 30
-df.enc.dwell.bill$cons.month.kwh.med1 <- df.enc.dwell.bill$cons.day.kwh.med1 * 30
-df.enc.dwell.bill$cons.month.kwh.hig1 <- df.enc.dwell.bill$cons.day.kwh.hig1 * 30
-```
-
-
-```{r tbl-stats-kwhday, results="hold"}
-df.bill.temp <- subset(df.enc.dwell.bill,
-                        select=c('cons.day.kwh.low1', 'cons.day.kwh.med1', 
-                                 'cons.day.kwh.hig1', 'factor_sem'))
-
-stat.kwh.day <- descr(df.bill.temp, 
-                           weights = df.bill.temp$factor_sem, 
-                           round.digits = 3,
-                           stats = c("mean", "sd", "min", 
-                                     "med", "max", "pct.valid"), 
-                           transpose = TRUE)
-
-knitr::kable(stat.kwh.day, 
-      label = 'table-stats-kwhday', digits = 3, align = 'c', booktabs = TRUE,
-  caption = 'Summary statistics of daily electricity consumption (in KWh)') %>%
-  kable_styling(bootstrap_options = c("striped", "hover", 
-                                      "condensed", "responsive"),
-                fixed_thead = T) %>%
-  scroll_box(width = "100%")
-
-rm(df.bill.temp)
-```
-
-### Monthly Electricity Consumption in KWh
-```{r tbl-stats-kwh-month, results="hold"}
-df.bill.temp <- subset(df.enc.dwell.bill,
-                        select=c('cons.month.kwh.low1', 'cons.month.kwh.med1', 
-                                 'cons.month.kwh.hig1', 'factor_sem'))
-
-stat.kwh.month <- descr(df.bill.temp, 
-                           weights = df.bill.temp$factor_sem, 
-                           round.digits = 3,
-                           stats = c("mean", "sd", "min", 
-                                     "med", "max", "pct.valid"), 
-                           transpose = TRUE)
-
-stat.kwh.month <- as.data.frame(stat.kwh.month)
-
-knitr::kable(stat.kwh.month, 
-      label = 'table-stats-kwhmonth', digits = 3, align = 'c', booktabs = TRUE,
-  caption = 'Summary statistics of monthly electricity consumption (in KWh)') %>%
-  kable_styling(bootstrap_options = c("striped", "hover", 
-                                      "condensed", "responsive"),
-                fixed_thead = T) %>%
-  scroll_box(width = "100%")
-
-rm(df.bill.temp)
-
-stat.kwh.month$percent.valid <-stat.kwh.month$`% Total`
-```
-
-```{r pl-cons-month-dwell-box, fig.cap="Boxplots Electricity Monthly Consumption", warning = FALSE, results= "hold"}
-pal <- c('blue', 'orange', 'red')
-pal <- setNames(pal, c("low", "med", "high"))
-
-pl.cons.month.dwell.box <- plot_ly(type = 'box') %>%
-  add_boxplot(y = df.enc.dwell.bill$cons.month.kwh.low1, 
-              boxpoints = 'outliers', 
-              name = "Low", 
-              color = list(color =pal['low']),
-              marker = list(color = pal['low']), 
-              line=list(color = pal['low']) ) %>%  
-  add_boxplot(y = df.enc.dwell.bill$cons.month.kwh.med1, 
-              boxpoints = 'outliers', 
-              name = "Medium", 
-              color = list(color =pal['med']),
-              marker = list(color = pal['med']), 
-              line=list(color = pal['med']) ) %>%
-  add_boxplot(y = df.enc.dwell.bill$cons.month.kwh.hig1, 
-              boxpoints = 'outliers', 
-              name = "High", 
-              color = list(color =pal['high']),
-              marker = list(color = pal['high']), 
-              line=list(color = pal['high'])) %>%
-  layout(title = "Boxplots of Monthly Electricity Consumption per Dwelling (KWh/month)", 
-         yaxis = list(range = c(0, 2000)))
-
-pl.cons.month.dwell.box
-
-plotly_IMAGE(pl.cons.month.dwell.box, format = "png", 
-             out_file = "./output/fig/box_elect_cons_month.png")
-```
-
-The main statistics and the data distribution of the three estimations (low, medium, and low) of electricity consumption, show a very small difference between them. So, we decided to use only the "high" estimation for the rest of the analysis. This variable is the one that give us more data available r round(stat.kwh.month[c('cons.month.kwh.hig1'), c('percent.valid')], 2)%.
-
-```{r plt-elect-month-cons, fig.cap="Electricity Monthly Consumption", warning = FALSE, results= "hold"}
-pl.elect..month.cons <- plot_ly(x = df.enc.dwell.bill$cons.month.kwh.hig1,
-             type = "histogram")%>%
-  layout(title = 'Electricity Monthly Consumption per Dwelling',
-         xaxis = list(title = "KWh", range = c(0, 1500)), 
-         yaxis = list(title = "Frequency"))
-
-pl.elect..month.cons
-
-plotly_IMAGE(pl.elect..month.cons, format = "png", 
-             out_file = "./output/fig/hist_elect_cons_month.png")
-```
-
-```{r, include=FALSE}
-# just to debug code
-summary(df.enc.dwell.bill$cons.day.kwh.low1)
-summary(df.enc.dwell.bill$cons.day.kwh.med1)
-summary(df.enc.dwell.bill$cons.day.kwh.hig1)
-
-summary(df.enc.dwell.bill$cons.month.kwh.low1)
-summary(df.enc.dwell.bill$cons.month.kwh.med1)
-summary(df.enc.dwell.bill$cons.month.kwh.hig1)
-```
-
-### Consumption by Socioeconomic Status
-
-```{r}
-stat.month.kwh.socioec <- psych::describeBy(df.enc.dwell.bill$cons.month.kwh.hig1, 
-                  df.enc.dwell.bill$stat.socio, na.rm=T, 
-                  mat=TRUE)
-stat.month.kwh.socioec <- as.data.frame(stat.month.kwh.socioec)
-row.names(stat.month.kwh.socioec) <- stat.month.kwh.socioec$group1
-drop <- c('item', 'vars', 'group1', 'mad', 'trimmed')
-
-stat.month.kwh.socioec <- stat.month.kwh.socioec[ , !(names(stat.month.kwh.socioec) 
-                                                      %in% drop)]
-```
-
-As shown in `r t.ref("tbl_bill1_days")`, the average monthly electricity consumption of households increases as their socioeconomic status increases. Households of high socioeconomic status, in average consume almost double electricity (`r round(stat.month.kwh.socioec[c('high'), c('mean')],2)` KWh/month) than households with low socioeconomic status (`r round(stat.month.kwh.socioec[c('low'), c('mean')],2)` KWh/month). 
-
-```{r tbl-stats-month.kwh.socioec, }
-knitr::kable(stat.month.kwh.socioec[order(stat.month.kwh.socioec$mean), ], 
-      label = 'table-stats-month.kwh.socioec', digits = 3, 
-      align = 'c', booktabs = T, row.names = TRUE,
-      caption = 'Summary statistics of the monthly electricity consumption by socioeconomic status (KWh)') %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"),
-                fixed_thead = T)
-```
 
 ### Consumption by Dwelling Size
 ```{r}
@@ -1408,7 +1413,7 @@ df.enc.dwell <- subset(df.enc.dwell.bill,
 ```{r, include =FALSE}
 write.csv(df.bill, "./output/electricity_bill.csv", 
            row.names=TRUE, na="")
- ○
+ 
 write.csv(df.enc.dwell, "./output/encevi_dwelling_merg.csv", 
            row.names=TRUE, na="")
 ```

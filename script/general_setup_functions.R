@@ -24,7 +24,6 @@ UsePackage('plotly')
 UsePackage('broman')       # rounding values, kbroman.org/knitr_knutshell/pages/Rmarkdown.html
 UsePackage('survey')       # survey design
 UsePackage("devtools")
-UsePackage("dplyr")        # data manipulation
 UsePackage('kableExtra')   # tables 
 UsePackage('stringr')      # twrappers over stringi package, replace matched patterns 
 UsePackage('DT')           # create HTML table widgets using the DataTables library
@@ -32,6 +31,14 @@ UsePackage('summarytools') # DF summaries, cross-tabulations, weight-enabled fre
 UsePackage('data.table')
 UsePackage('captioner')    # Handling figures, tables, and equations numbering
 UsePackage('reticulate')   # Set of tools for interoperability between Python and R
+UsePackage("magick")
+UsePackage("webshot")
+UsePackage("srvyr")
+UsePackage("foreign")      #read INEGI tables with different formats
+UsePackage("doBy")         #to order tables based on different variables
+
+#webshot::install_phantomjs()
+
 
 Sys.setenv("plotly_username" = "mauricioh2")
 Sys.setenv("plotly_api_key" = "CzXpBQKn6zRQj1ExEd5O")

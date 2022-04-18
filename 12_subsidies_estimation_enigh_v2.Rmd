@@ -1,0 +1,572 @@
+---
+title: "ENIGH 2018 - Subsidies Estimation"
+author: '[Mauricio Hernandez](http://mauricioh2.com)'
+date: "`r Sys.Date()`"
+subtitle: Estimate Subsidies
+bibliography: energy_mex.bib
+---
+
+
+```{r}
+#Remove all objects from current workspace and call garbage collector
+rm(list=ls())
+gc()
+
+source("./script/general_setup_functions.R")
+#source("./script/compute_consumption_bill.R")
+#source("./script/get_bill_periodicity.R")
+```
+
+
+```{r knitr_init, include=FALSE}
+#options(max.print = "75")
+opts_chunk$set(echo = TRUE,
+	             cache = FALSE,
+               prompt = FALSE,
+               tidy = FALSE,
+               comment = NA,
+               message = FALSE,
+               warning = FALSE,
+               fig.path = 'figures/')
+```
+
+```{r setup, include=FALSE}
+#Generates the css needed by summarytools
+st_css()
+
+#devtools::install_github("ropensci/plotly")
+knitr::opts_chunk$set(fig.width = 8, collapse = TRUE)
+
+knitr::knit_hooks$set(output = function(x, options){
+  if(!is.null(options$max_height)){
+    paste('<pre style = "max-height:',
+          options$max_height, 
+          ';float: left; width: 910px; overflow-y: auto;">',
+          x,
+          "</pre>",
+          sep = "")
+  } else{
+    x
+  }
+})
+```
+
+
+```{r}
+df_enigh_hh <- read.csv("./output/enigh_hh_w_elect_v1.csv", 
+                           header = TRUE, na.strings="")
+df_enigh_hh <- df_enigh_hh %>%
+  rename(folioviv = ï..folioviv)
+
+head(df_enigh_hh)
+```
+
+
+
+```{r}
+df.tariff.scheme  <- read.csv("./output/tables/tariff_cost.csv", 
+                              header = TRUE, na.strings="")
+
+df.tariff.scheme.sub <- subset(df.tariff.scheme, tariff.block.name=="extra",
+                               select= c(tariff, summer, cost.kwh))
+df.tariff.scheme.sub
+```
+
+Notes: Dollar Exchange Rate: 	18.70	30-Jun-18, Ref. Banxico, 2021 (https://www.banxico.org.mx/tipcamb/main.do?page=tip&idioma=sp)
+```{r}
+DOLLAR_TO_MXN <- 18.70
+
+# for all the tariffs the max. cost per kwh is $2.802
+COST_KWH_CFE <- mean(df.tariff.scheme.sub$cost.kwh)
+COST_KWH_CFE_USD <- COST_KWH_CFE / DOLLAR_TO_MXN
+```
+
+```{r}
+freq(df_enigh_hh$tariff_merge_manual_dac_correct)
+```
+
+
+```{r}
+#Remove household records whose electricity consumption couldn't be estimated
+df_enigh_hh_sub <- subset(df_enigh_hh, (!is.na(df_enigh_hh$bill_month_kwh_with_dac)))
+```
+
+
+```{r}
+
+options(survey.lonely.psu = "adjust")
+dstrata <- df_enigh_hh_sub %>%
+  as_survey_design(id = upm, strata = est_dis, weights = factor) 
+```
+
+
+```{r}
+tbl.month.cons.bill <- dstrata %>%
+  summarize(mean_month_spend = survey_mean(bill_month_amount_before_tax_with_dac, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl.month.cons.bill
+```
+
+##Number of households by tariff
+```{r}
+#number of households by tariff
+dstrata %>% 
+    group_by(tariff_merge_manual_dac_correct)  %>%
+  summarize(survey_total(Nhog, na.rm= TRUE, vartype = c("ci"))) 
+```
+
+##Total monthly consumption [kWh]
+```{r}
+tbl.total.month.kwh <- dstrata %>% 
+  summarize(total_month_kwh = survey_total(bill_month_kwh_with_dac, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl.total.month.kwh <- na.omit(tbl.total.month.kwh) 
+
+tbl.total.month.kwh
+```
+
+###Total monthly consumption [kWh] by tariff
+```{r}
+tbl.total.month.kwh.tariff <- dstrata %>% 
+  group_by(tariff_merge_manual_dac_correct)  %>%
+  summarize(total_month_kwh = survey_total(bill_month_kwh_with_dac, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl.total.month.kwh.tariff <- na.omit(tbl.total.month.kwh.tariff) 
+
+tbl.total.month.kwh.tariff
+```
+
+##Average monthly consumption
+```{r}
+tbl.month.kwh <- dstrata %>%
+  summarize(mean_month_kwh = survey_mean(bill_month_kwh_with_dac, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl.month.kwh
+```
+
+##Average monthly consumption [kWh] per household by tariff
+```{r}
+tbl_month_kwh_byhh <- dstrata %>% 
+  group_by(tariff_merge_manual_dac_correct)  %>%
+  summarize(mean_month_kwh = survey_mean(bill_month_kwh_with_dac, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl_month_kwh_byhh <- na.omit(tbl_month_kwh_byhh) 
+
+tbl_month_kwh_byhh
+```
+
+##Average monthly cost [MXN] of electtricity by tariff
+```{r}
+tbl.month.cons.bytariff <- dstrata %>% 
+  group_by(tariff_merge_manual_dac_correct)  %>%
+  summarize(bill_month_cost_before_tax = survey_mean(bill_month_amount_before_tax_with_dac, 
+                                         na.rm= TRUE, vartype = c("ci"))) 
+
+tbl.month.cons.bytariff <- na.omit(tbl.month.cons.bytariff) 
+
+tbl.month.cons.bytariff
+```
+
+##Total monthly cost [MXN] of electtricity by tariff
+```{r}
+tbl.total.month.cons.bytariff <- dstrata %>% 
+  group_by(tariff_merge_manual_dac_correct)  %>%
+  summarize(mean_month_kwh = survey_total(bill_month_amount_before_tax_with_dac, 
+                                         na.rm= TRUE, vartype = c("ci"))) 
+
+tbl.total.month.cons.bytariff <- na.omit(tbl.total.month.cons.bytariff) 
+
+tbl.total.month.cons.bytariff
+```
+
+##Average price per kwh
+```{r}
+#These values don't include taxes and fees
+df_enigh_hh_sub$price_kwh_notax <- df_enigh_hh_sub$bill_month_amount_before_tax_with_dac / df_enigh_hh_sub$bill_month_kwh_with_dac
+
+df_enigh_hh_sub$real.cost_bill_month <- COST_KWH_CFE * df_enigh_hh_sub$bill_month_kwh_with_dac
+
+df_enigh_hh_sub$bill_subsidy_month <- df_enigh_hh_sub$real.cost_bill_month - df_enigh_hh_sub$bill_month_amount_before_tax_with_dac
+
+
+options( survey.lonely.psu = "adjust" )
+dstrata <- df_enigh_hh_sub %>%
+  as_survey_design(id = upm, strata = est_dis, weights = factor) 
+
+tbl.price.kwh <- dstrata %>%
+  summarize(price_kwh = survey_mean(price_kwh_notax, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl.price.kwh
+```
+
+##Average price per kwh by Tariff
+```{r}
+tbl.price.kwh <- dstrata %>%
+  group_by(tariff_merge_manual_dac_correct)  %>%
+  summarize(price_kwh = survey_mean(price_kwh_notax, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl.price.kwh
+```
+
+## Subsidies
+
+```{r}
+tbl.month_subsidy <- dstrata %>%
+  summarize(month_subsidy = survey_total(bill_subsidy_month, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl.month_subsidy
+```
+
+```{r}
+tbl_month_subsidy_byTariff <- dstrata %>%
+  group_by(tariff_merge_manual_dac_correct)  %>%
+  summarize(month_subsidy = survey_total(bill_subsidy_month, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl_month_subsidy_byTariff
+```
+
+
+### Monthly Subsidies per household
+```{r}
+tbl_month_subsidy_byhh <- dstrata %>%
+  summarize(month_subsidy = survey_mean(bill_subsidy_month, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl_month_subsidy_byhh
+```
+
+### Monthly Subsidies per household by Tariff
+```{r}
+tbl_month_subsidy_byhh <- dstrata %>%
+    group_by(tariff_merge_manual_dac_correct)  %>%
+  summarize(month_subsidy = survey_mean(bill_subsidy_month, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl_month_subsidy_byhh
+```
+
+# Statistics by Income Decile
+
+## Electricity Consumption by Income Decile
+```{r}
+tbl_month_kwh_bydecile <- dstrata %>%
+  group_by(income_decile)  %>%
+  summarize(kwh_decile = survey_mean(bill_month_kwh_with_dac, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl_month_kwh_bydecile
+```
+
+## Electricity expenses by decile
+```{r}
+tbl_month_consump_bydecile <- dstrata %>%
+  group_by(income_decile)  %>%
+  summarize(cons_amount_decile = survey_mean(elect_month_spend, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl_month_consump_bydecile
+```
+
+## Subsidies by Income Decile
+```{r}
+df_enigh_hh_sub$perc_spend_before_tax <- df_enigh_hh_sub$bill_month_amount_before_tax_with_dac / (df_enigh_hh_sub$ing_cor/3)
+df_enigh_hh_sub$perc_spend <- df_enigh_hh_sub$elect_month_spend / (df_enigh_hh_sub$ing_cor/3)
+
+
+df_enigh_hh_sub$perc_spend_no_subsidy <- (df_enigh_hh_sub$elect_month_spend +  df_enigh_hh_sub$bill_subsidy_month )/ (df_enigh_hh_sub$ing_cor/3) 
+
+df_enigh_hh_sub2 <- subset(df_enigh_hh_sub, ing_cor!=0)
+df_enigh_hh_sub2 <- subset(df_enigh_hh_sub2, !is.na(df_enigh_hh_sub2$bill_subsidy_month))
+
+options(survey.lonely.psu = "adjust")
+dstrata <- df_enigh_hh_sub2 %>%
+  as_survey_design(id = upm, strata = est_dis, weights = factor) 
+```
+
+
+
+```{r}
+
+mean(df_enigh_hh_sub2$perc_spend)
+median(df_enigh_hh_sub2$perc_spend)
+mean(df_enigh_hh_sub2$perc_spend_no_subsidy)
+median(df_enigh_hh_sub2$perc_spend_no_subsidy)
+```
+
+
+
+
+
+## Monthly Subsidies by Decile
+```{r}
+tbl_month_subs_bydecil <- dstrata %>%
+  group_by(income_decile)  %>%
+  summarize(subsidy = survey_mean(bill_subsidy_month, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl_month_subs_bydecil
+```
+
+###Percentage of electricity expenditure relative to income (with subsidies)
+```{r}
+tbl_month_perc_spend_bydecil <- dstrata %>%
+  group_by(income_decile)  %>%
+  summarize(perc_spend = survey_mean(perc_spend, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl_month_perc_spend_bydecil
+```
+
+
+
+
+```{r}
+tbl_month_perc_spend_region_bydecil <- dstrata %>%
+  group_by(income_decile, region_f)  %>%
+  summarize(perc_spend = survey_mean(perc_spend, na.rm= TRUE, vartype = c("ci"))) 
+tbl_month_perc_spend_region_bydecil
+```
+```{r}
+write.csv(tbl_month_perc_spend_region_bydecil,"./output/tables/enigh_month_perc_spend_region_bydecil.csv", row.names = FALSE)
+```
+
+## Median Values
+```{r}
+dstrata %>%
+  summarize(perc_spend = survey_median(perc_spend, na.rm= TRUE, vartype = c("ci"))) 
+```
+
+```{r}
+tbl_month_perc_spend_region_bydecil <- dstrata %>%
+  group_by(income_decile, region_f)  %>%
+  summarize(perc_spend = survey_median(perc_spend, na.rm= TRUE, vartype = c("ci"))) 
+tbl_month_perc_spend_region_bydecil
+```
+
+```{r}
+write.csv(tbl_month_perc_spend_region_bydecil,"./output/tables/enigh_median_perc_spend_region_bydecil.csv", row.names = FALSE)
+```
+
+###Percentage of electricity subsidy relative to income by region (without subsidies)
+```{r}
+tbl_month_perc_spend_nosubsidy_region_bydecil <- dstrata %>%
+  group_by(income_decile, region_f)  %>%
+  summarize(perc_spend_no_subsidy = survey_mean(perc_spend_no_subsidy, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl_month_perc_spend_nosubsidy_region_bydecil
+```
+```{r}
+write.csv(tbl_month_perc_spend_nosubsidy_region_bydecil,"./output/tables/enigh_month_perc_spend_nosubsidy_region_bydecil.csv", row.names = FALSE)
+```
+
+## Median values
+
+```{r}
+tbl_month_perc_spend_nosubsidy_region_bydecil <- dstrata %>%
+  group_by(income_decile, region_f)  %>%
+  summarize(perc_spend_no_subsidy = survey_median(perc_spend_no_subsidy, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl_month_perc_spend_nosubsidy_region_bydecil
+```
+
+```{r}
+ dstrata %>%
+  summarize(perc_spend_no_subsidy = survey_median(perc_spend_no_subsidy, na.rm= TRUE, vartype = c("ci"))) 
+```
+
+```{r}
+write.csv(tbl_month_perc_spend_nosubsidy_region_bydecil,"./output/tables/enigh_median_perc_spend_nosubsidy_region_bydecil.csv", row.names = FALSE)
+```
+
+
+
+
+df_enigh_hh_sub$perc_spend_no_subsidy <- (df_enigh_hh_sub$elect_month_spend +  df_enigh_hh_sub$bill_subsidy_month )/ (df_enigh_hh_sub$ing_cor/3) 
+
+df_enigh_hh_sub2 <- subset(df_enigh_hh_sub, ing_cor!=0)
+df_enigh_hh_sub2 <- subset(df_enigh_hh_sub2, !is.na(df_enigh_hh_sub2$bill_subsidy_month))
+
+###Percentage of electricity subsidy relative to income by region 
+```{r}
+tbl_month_perc_spend_region_bydecil <- dstrata %>%
+  group_by(income_decile, region_f)  %>%
+  summarize(perc_spend = survey_mean(perc_spend, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl_month_perc_spend_region_bydecil
+```
+
+
+
+```{r}
+tbl_month_perc_spend_nosubsidy_region_bydecil
+```
+```{r}
+plot.cons.month <- ggplot(tbl_month_perc_spend_region_bydecil, aes(x = income_decile, y = perc_spend*100, fill= region_f)) +
+    geom_bar(stat="identity",position="dodge") + 
+  scale_colour_viridis_d(begin = 0.8, end = 0.2,   option = "magma", aesthetics = c("fill")) +
+    scale_x_discrete(name= c("1st              \t    2nd            \t      3rd             \t       4th             \t      5th           \t       6th           \t      7th           \t         8th               \t     9th             \t     10th")) +
+    scale_y_continuous(name= "Percentage", breaks=c(0, 2, 4, 6, 8, 10), limits= c(0, 11.5)) +
+  geom_errorbar(position=position_dodge(width=.9), width=.5, color="grey50") + 
+  aes(ymin=perc_spend_low*100, ymax=perc_spend_upp*100) +
+  geom_text(aes(label=round(perc_spend*100, 2)), vjust=-0.6, color="black", 
+            position = position_dodge(.9), size=4.5) +
+    facet_wrap(~ region_f, ncol = 1, scales = "free_y");
+
+plot.cons.month <- plot.cons.month + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size=16), 
+        axis.text.y = element_text(angle = 90, size=14),
+        axis.title.y = element_text(angle = 90, size=16),
+        plot.title = element_text(hjust = 0.5, size =18), 
+        panel.background = element_rect(fill = "white", colour = NA),
+        panel.grid.major = element_line(size = 0.5, linetype = 'solid', colour = "grey92"), 
+        legend.position = "none", strip.text = element_text(size = 14))  +  
+  labs(title = "Average Percent of Income Spent on Electricity by Income Decile and Climate Region in Mexico",
+       subtitle ="Summer Season, 2018")
+
+plot.cons.month
+
+ggsave(plot = plot.cons.month, width = 12, height = 8, dpi = 400, 
+       filename = "./output/fig/month_perc_spend_region_bydecil.png")
+```
+
+
+
+```{r}
+plot.spend.month <- ggplot(tbl_month_perc_spend_nosubsidy_region_bydecil, 
+                          aes(x = income_decile, y = perc_spend_no_subsidy*100, fill= region_f)) +
+    geom_bar(stat="identity",position="dodge") + 
+  scale_colour_viridis_d(begin = 0.8, end = 0.2,   option = "magma", aesthetics = c("fill")) +
+    scale_x_discrete(name= c("1st              \t    2nd            \t      3rd             \t       4th             \t      5th           \t       6th           \t      7th           \t         8th               \t     9th             \t     10th")) +
+    scale_y_continuous(name= "Percentage", breaks=c(0, 5, 10, 15, 20, 25), limits= c(0, 26.0)) +
+  geom_errorbar(position=position_dodge(width=.9), width=.5, color="grey50") + 
+  aes(ymin=perc_spend_no_subsidy_low*100, ymax=perc_spend_no_subsidy_upp*100) +
+  geom_text(aes(label=round(perc_spend_no_subsidy*100, 2)), vjust=-0.6, color="black", 
+            position = position_dodge(.9), size=4.5) +
+    facet_wrap(~ region_f, ncol = 1, scales = "free_y");
+
+plot.spend.month <- plot.spend.month + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size=16), 
+        axis.text.y = element_text(angle = 90, size=14),
+        axis.title.y = element_text(angle = 90, size=16),
+        plot.title = element_text(hjust = 0.5, size =18), 
+        panel.background = element_rect(fill = "white", colour = NA),
+        panel.grid.major = element_line(size = 0.5, linetype = 'solid', colour = "grey92"), 
+        legend.position = "none", strip.text = element_text(size = 14))  +  
+  labs(title = "Average Percent of Income Spent on Electricity by Income Decile and Climate Region without Subsidies",
+       subtitle ="Summer Season, 2018")
+
+plot.spend.month
+
+ggsave(plot = plot.spend.month, width = 12, height = 8, dpi = 400, 
+       filename = "./output/fig/month_perc_spend_no_subsidies_region_bydecil.png")
+```
+
+
+```{r}
+#this table was created manually
+tbl_month_month_perc_spend_region_both_bydecil <- read.csv("./output/tables/enigh_month_perc_spend_region_both_bydecil.csv", 
+                           header = TRUE, na.strings="")
+
+```
+
+
+```{r}
+plot.cons.month <- ggplot(tbl_month_month_perc_spend_region_both_bydecil, aes(x = income_decile, y = perc_spend*100, fill= subsidized)) +
+    geom_bar(stat="identity",position="dodge") + 
+  scale_colour_viridis_d(begin = 0.8, end = 0.2,   option = "magma", aesthetics = c("fill")) +
+    scale_x_discrete(name= c("1st              \t    2nd            \t      3rd             \t       4th             \t      5th           \t       6th           \t      7th           \t         8th               \t     9th             \t     10th")) +
+    scale_y_continuous(name= "Percentage", breaks=c(0, 5, 10, 15, 20, 25), limits= c(0, 25.5)) +
+  geom_errorbar(position=position_dodge(width=.9), width=.5, color="grey50") + 
+  aes(ymin=perc_spend_low*100, ymax=perc_spend_upp*100) +
+  geom_text(aes(label=round(perc_spend*100, 2)), vjust=-0.6, color="black", 
+            position = position_dodge(.9), size=4.5) +
+    facet_wrap(~ region_f, ncol = 1, scales = "free_y");
+
+plot.cons.month <- plot.cons.month + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size=16), 
+        axis.text.y = element_text(angle = 90, size=14),
+        axis.title.y = element_text(angle = 90, size=16),
+        plot.title = element_text(hjust = 0.5, size =18), 
+        panel.background = element_rect(fill = "white", colour = NA),
+        panel.grid.major = element_line(size = 0.5, linetype = 'solid', colour = "grey92"), 
+        legend.position = "none", strip.text = element_text(size = 14))  +  
+  labs(title = "Average Percent of Income Spent on Electricity by Income Decile and Climate Region in Mexico",
+       subtitle ="Summer Season, 2018")
+
+plot.cons.month
+
+ggsave(plot = plot.cons.month, width = 12, height = 8, dpi = 400, 
+       filename = "./output/fig/month_perc_spend_subsidy_both_region_bydecil.png")
+```
+
+# Plots with Median values
+
+
+```{r}
+dstrata %>%
+  summarize(perc_spend = survey_median(perc_spend, na.rm= TRUE, vartype = c("ci"))) 
+```
+
+
+```{r}
+#this table was created manually
+tbl_month_month_perc_spend_region_both_bydecil <- read.csv("./output/tables/enigh_median_perc_spend_region_both_bydecil.csv", 
+                           header = TRUE, na.strings="")
+
+```
+
+
+```{r}
+plot.cons.month <- ggplot(tbl_month_month_perc_spend_region_both_bydecil, aes(x = income_decile, y = perc_spend*100, fill= subsidized)) +
+    geom_bar(stat="identity",position="dodge") + 
+  scale_colour_viridis_d(begin = 0.8, end = 0.2,   option = "magma", aesthetics = c("fill")) +
+    scale_x_discrete(name= c("1st              \t    2nd            \t      3rd             \t       4th             \t      5th           \t       6th           \t      7th           \t         8th               \t     9th             \t     10th")) +
+    scale_y_continuous(name= "Percentage", breaks=c(0, 5, 10, 15, 20), limits= c(0, 20.5)) +
+  geom_errorbar(position=position_dodge(width=.9), width=.5, color="grey50") + 
+  aes(ymin=perc_spend_low*100, ymax=perc_spend_upp*100) +
+  geom_text(aes(label=round(perc_spend*100, 2)), vjust=-0.6, color="black", 
+            position = position_dodge(.9), size=4.5) +
+    facet_wrap(~ region_f, ncol = 1, scales = "free_y");
+
+plot.cons.month <- plot.cons.month + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size=16), 
+        axis.text.y = element_text(angle = 90, size=14),
+        axis.title.y = element_text(angle = 90, size=16),
+        plot.title = element_text(hjust = 0.5, size =18), 
+        panel.background = element_rect(fill = "white", colour = NA),
+        panel.grid.major = element_line(size = 0.5, linetype = 'solid', colour = "grey92"), 
+        legend.position = "none", strip.text = element_text(size = 14))  +  
+  labs(title = "Median Percent of Income Spent on Electricity by Income Decile and Climate Region in Mexico",
+       subtitle ="Summer Season, 2018")
+
+plot.cons.month
+
+ggsave(plot = plot.cons.month, width = 12, height = 8, dpi = 400, 
+       filename = "./output/fig/median_perc_spend_subsidy_both_region_bydecil.png")
+```
+
+
+#Estimations by Climate Region
+
+*Electricity consumption by income decile and climate region*
+```{r}
+
+tbl_month_kwh_bydec_region <- dstrata %>%
+  group_by(income_decile, region_f)  %>%
+  summarize(kwh_decile = survey_mean(bill_month_kwh_with_dac, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl_month_kwh_bydec_region
+```
+```{r}
+write.csv(tbl_month_kwh_bydec_region,"./output/tables/enigh_cons_by_income_decil_region.csv", row.names = FALSE)
+```
+
+#Estimations by State
+
+Electricity consumption by state
+
+```{r}
+tbl_month_kwh_bystate <- dstrata %>%
+  group_by(state.f, is_summer1)  %>%
+  summarize(kwh_month = survey_mean(bill_month_kwh_with_dac, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl_month_kwh_bystate
+```
+
+```{r}
+write.csv(tbl_month_kwh_bystate,"./output/tables/enigh_mean_cons_state.csv", row.names = FALSE)
+```

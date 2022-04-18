@@ -1,0 +1,359 @@
+---
+title: "ENCEVI 2018 - Subsidies By spend Deciles"
+author: '[Mauricio Hernandez](http://mauricioh2.com)'
+date: "`r Sys.Date()`"
+subtitle: Estimate Subsidies
+bibliography: energy_mex.bib
+---
+
+
+```{r}
+#Remove all objects from current workspace and call garbage collector
+rm(list=ls())
+gc()
+
+source("./script/general_setup_functions.R")
+#source("./script/compute_consumption_bill.R")
+#source("./script/get_bill_periodicity.R")
+```
+
+
+```{r knitr_init, include=FALSE}
+#options(max.print = "75")
+opts_chunk$set(echo = TRUE,
+	             cache = FALSE,
+               prompt = FALSE,
+               tidy = FALSE,
+               comment = NA,
+               message = FALSE,
+               warning = FALSE,
+               fig.path = 'figures/')
+```
+
+```{r setup, include=FALSE}
+#Generates the css needed by summarytools
+st_css()
+
+#devtools::install_github("ropensci/plotly")
+knitr::opts_chunk$set(fig.width = 8, collapse = TRUE)
+
+knitr::knit_hooks$set(output = function(x, options){
+  if(!is.null(options$max_height)){
+    paste('<pre style = "max-height:',
+          options$max_height, 
+          ';float: left; width: 910px; overflow-y: auto;">',
+          x,
+          "</pre>",
+          sep = "")
+  } else{
+    x
+  }
+})
+```
+
+
+```{r}
+df_encevi_hh <- read.csv("./output/df_bill_wconsump.csv", 
+                           header = TRUE, na.strings="")
+df_encevi_hh <- df_encevi_hh %>%
+  rename(folioviv = ï..folio)
+
+head(df_encevi_hh)
+```
+
+
+```{r}
+df.tariff.scheme  <- read.csv("./output/tables/tariff_cost.csv", 
+                              header = TRUE, na.strings="")
+
+df.tariff.scheme.sub <- subset(df.tariff.scheme, tariff.block.name=="extra",
+                               select= c(tariff, summer, cost.kwh))
+df.tariff.scheme.sub
+```
+
+Notes: Dollar Exchange Rate: 	18.70	30-Jun-18, Ref. Banxico, 2021 (https://www.banxico.org.mx/tipcamb/main.do?page=tip&idioma=sp)
+```{r}
+DOLLAR_TO_MXN <- 19.69
+
+# for all the tariffs the max. cost per kwh is $2.802
+COST_KWH_CFE <- mean(df.tariff.scheme.sub$cost.kwh)
+COST_KWH_CFE_USD <- COST_KWH_CFE / DOLLAR_TO_MXN
+```
+
+
+# Average electricity consumption (in Kwh) by household deciles in 2018
+
+```{r}
+#df_encevi_hh$bill_month_kwh_with_dac
+df_encevi_hh_sub <- subset(df_encevi_hh, (!is.na(df_encevi_hh$bill_month_kwh_with_dac)))
+```
+
+```{r}
+freq(df_encevi_hh$tariff)
+```
+
+```{r}
+sum(df_encevi_hh$factor)
+sum(df_encevi_hh_sub$factor)
+```
+
+```{r}
+##################### consumption  ###################
+# se crea una bandera para numerar a los hogares
+df_encevi_hh_sub$Nhog <- 1
+
+# ordena Conc de acuerdo a bill_month_kwh_with_dac, folioviv, foliohog.
+df_encevi_hh_sub<- orderBy (~+bill_month_kwh_with_dac+folioviv+foliohog, data=df_encevi_hh_sub)
+# suma todos los factores y guarda el valor en el vector tot_households.
+tot_households <- sum(df_encevi_hh_sub$factor, to.data.frame=TRUE)
+
+# se divide la suma de factores entre diez para sacar el tamaño del decil
+# se debe de truncar el resultado quitando los decimales.
+size_decile_consump<-trunc(tot_households/10)
+
+# muestra la suma del factor en variable hog.
+df_encevi_hh_sub$size_decile_consump=size_decile_consump
+```
+
+```{r}
+#Consumption deciles
+Numdec<-c("Total", "I", "II", "III","IV", "V", "VI", "VII", "VIII", "IX","X")
+
+############### CREACION DE elect_cons_decileES DE INGRESO #######################
+# se renombra la tabla concentrado a df_encevi_hh_spend.
+df_encevi_hh_spend <- df_encevi_hh_sub
+# dentro de la tabla df_encevi_hh_spend se crea la variable MAXT y se le asigna los valores que tienen el bill_month_kwh_with_dac.
+df_encevi_hh_spend$MAXT_CONS<-df_encevi_hh_spend$bill_month_kwh_with_dac
+# se ordena de menor a mayor según la variable MAXT.
+df_encevi_hh_spend<-df_encevi_hh_spend[with(df_encevi_hh_spend, order(rank(MAXT_CONS))),]
+# se aplica la función cumsum, suma ACUMULA_CONSda a la variable factor.
+df_encevi_hh_spend$ACUMULA_CONS<-cumsum(df_encevi_hh_spend$factor)
+
+# entra a un ciclo donde iremos generando los deciles 1 a 10.
+for(i in 1:9)
+{
+ a1<-df_encevi_hh_spend[dim(df_encevi_hh_spend[df_encevi_hh_spend$ACUMULA_CONS<size_decile_consump*i,])[1]+1,]$factor
+ df_encevi_hh_spend<-rbind(df_encevi_hh_spend[1:(dim(df_encevi_hh_spend[df_encevi_hh_spend$ACUMULA_CONS<size_decile_consump*i,])[1]+1),],
+ df_encevi_hh_spend[(dim(df_encevi_hh_spend[df_encevi_hh_spend$ACUMULA_CONS<size_decile_consump*i,])[1]+1):dim(df_encevi_hh_spend[1])[1],])
+ b1<-size_decile_consump*i-df_encevi_hh_spend[dim(df_encevi_hh_spend[df_encevi_hh_spend$ACUMULA_CONS<size_decile_consump*i,])[1],]$ACUMULA_CONS
+ df_encevi_hh_spend[(dim(df_encevi_hh_spend[df_encevi_hh_spend$ACUMULA_CONS<size_decile_consump*i,])[1]+1),]$factor<-b1
+ df_encevi_hh_spend[(dim(df_encevi_hh_spend[df_encevi_hh_spend$ACUMULA_CONS<size_decile_consump*i,])[1]+2),]$factor<-(a1-b1)
+}
+df_encevi_hh_spend$ACUMULA_CONS2<-cumsum(df_encevi_hh_spend$factor)
+df_encevi_hh_spend$elect_cons_decile<-0
+df_encevi_hh_spend[(df_encevi_hh_spend$ACUMULA_CONS2<=size_decile_consump),]$elect_cons_decile<-1
+for(i in 1:9)
+{
+ df_encevi_hh_spend[((df_encevi_hh_spend$ACUMULA_CONS2>size_decile_consump*i)&(df_encevi_hh_spend$ACUMULA_CONS2<=size_decile_consump*(i+1))),]$elect_cons_decile<-(i+1)
+}
+df_encevi_hh_spend[df_encevi_hh_spend$elect_cons_decile%in%"0",]$elect_cons_decile<-10
+
+##################################################################
+# TOTAL HOGARES
+x<-tapply(df_encevi_hh_spend$factor_sem,df_encevi_hh_spend$Nhog, sum)
+
+# elect_cons_deciles
+y<-tapply(df_encevi_hh_spend$factor,df_encevi_hh_spend$elect_cons_decile,sum)
+# se calcula el promedio (ingreso entre los hogares) tanto para el total como para cada uno de los deciles
+month_kwh_with_dac_t<-tapply(df_encevi_hh_spend$factor*df_encevi_hh_spend$bill_month_kwh_with_dac,df_encevi_hh_spend$Nhog,sum)/x
+month_kwh_with_dac_d<-tapply(df_encevi_hh_spend$factor*df_encevi_hh_spend$bill_month_kwh_with_dac,df_encevi_hh_spend$elect_cons_decile,sum)/y
+########################## C U A D R O S #################################
+# guardamos los resultados en un data frame
+prom_rub <- data.frame (c(month_kwh_with_dac_t,month_kwh_with_dac_d))
+# agregamos el nombre a las filas
+row.names(prom_rub)<-Numdec
+## NOTA: El cálculo de las precisiones estadísticas de deciles y del coeficiente de GINI no son mostradas debido
+# a que requieren el uso de técnicas de remuestreo ##
+prom_rub
+
+df_encevi_hh_spend <- orderBy (~+folioviv+foliohog+elect_cons_decile, data=df_encevi_hh_spend)
+
+#write.csv(df_encevi_hh_spend,"./output/encevi_hh_w_cons_by_decil.csv", row.names = FALSE)
+
+head(df_encevi_hh_spend)
+```
+
+
+# Statistics by Consumption Decile
+
+## Electricity Consumption by Consumption Decile
+```{r}
+options( survey.lonely.psu = "adjust")
+dstrata <- df_encevi_hh_spend %>%
+  as_survey_design(id = upm, strata = est_dis, weights = factor_sem) 
+
+tbl_month_kwh_bydecile <- dstrata %>%
+  group_by(elect_cons_decile)  %>%
+  summarize(kwh_decile = survey_mean(bill_month_kwh_with_dac, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl_month_kwh_bydecile
+```
+
+
+## Electricity expenses by decile
+```{r}
+#Amount paid after taxes
+tbl_month_consump_bydecile <- dstrata %>%
+  group_by(elect_cons_decile)  %>%
+  summarize(cons_amount_decile = survey_mean(bill_amount1, na.rm= TRUE, vartype = c("ci"))) 
+tbl_month_consump_bydecile
+```
+
+
+```{r}
+sum(df_encevi_hh$factor_sem)
+sum(df_encevi_hh_spend$factor_sem)
+
+sum(df_encevi_hh_sub$factor_sem)
+
+sum(df_encevi_hh$Nhog)
+sum(df_encevi_hh_sub$Nhog)
+
+sum(df_encevi_hh_sub$Nhog)/ sum(df_encevi_hh$Nhog)
+sum(df_encevi_hh_sub$factor_sem) / sum(df_encevi_hh$factor_sem)
+sum(df_encevi_hh$Nhog) - sum(df_encevi_hh_sub$Nhog)
+
+freq(df_encevi_hh$tariff_merge_manual_dac_correct)
+```
+
+
+## Subsidies
+
+```{r}
+df_encevi_hh_spend$real.cost_bill_month <- COST_KWH_CFE * df_encevi_hh_spend$bill_month_kwh_with_dac
+
+df_encevi_hh_spend$bill_subsidy_month <- df_encevi_hh_spend$real.cost_bill_month - df_encevi_hh_spend$bill_month_amount_before_tax_with_dac
+# as some values would be negative, because of DAC tariffs
+df_encevi_hh_spend$bill_subsidy_month_pos <- df_encevi_hh_spend$bill_subsidy_month
+df_encevi_hh_spend$bill_subsidy_month_pos[df_encevi_hh_spend$bill_subsidy_month_pos < 0] <- 0
+
+df_encevi_hh_spend$subsidy_per_kwh_pos <- df_encevi_hh_spend$bill_subsidy_month_pos / df_encevi_hh_spend$bill_month_kwh_with_dac
+
+df_encevi_hh_spend$subsidy_per_kwh <- df_encevi_hh_spend$bill_subsidy_month / df_encevi_hh_spend$bill_month_kwh_with_dac
+
+dstrata <- df_encevi_hh_spend %>%
+  as_survey_design(id = upm, strata = est_dis, weights = factor_sem) 
+
+tbl.month_subsidy <- dstrata %>%
+  summarize(month_subsidy = survey_total(bill_subsidy_month_pos, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl.month_subsidy
+```
+
+
+## Average Monthly Subsidies
+```{r}
+tbl_month_subs_bydecil <- dstrata %>%
+  #group_by(income_decile)  %>%
+  summarize(subsidy = survey_mean(bill_subsidy_month_pos, na.rm= TRUE, vartype = c("ci"))) 
+#bill_subsidy_month_pos
+tbl_month_subs_bydecil
+```
+
+## Average Monthly Subsidies by Consumption Decile
+```{r}
+tbl_month_subs_bydecil <- dstrata %>%
+  group_by(elect_cons_decile)  %>%
+  summarize(subsidy = survey_mean(bill_subsidy_month_pos, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl_month_subs_bydecil
+```
+
+## Total Monthly Subsidies
+```{r}
+tbl_month_subs_bydecil <- dstrata %>%
+  summarize(subsidy = survey_total(bill_subsidy_month_pos, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl_month_subs_bydecil
+```
+
+## Total Monthly Subsidies by Consumption Decile
+```{r}
+#income_decile  elect_cons_decile
+tbl_month_subs_bydecil <- dstrata %>%
+  group_by(elect_cons_decile)  %>%
+  summarize(subsidy = survey_total(bill_subsidy_month_pos, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl_month_subs_bydecil
+```
+
+
+
+## Subsidies per KWh
+```{r}
+
+
+options( survey.lonely.psu = "adjust")
+
+dstrata <- df_encevi_hh_spend %>%
+  as_survey_design(id = upm, strata = est_dis, weights = factor_sem) 
+
+tbl_month_subs_kwh <- dstrata %>%
+  summarize(subsidy = survey_mean(subsidy_per_kwh_pos, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl_month_subs_kwh
+```
+## Subsidies per KWh by Consumption Decile
+```{r}
+tbl_month_subs_kwh_bydecil <- dstrata %>%
+  group_by(elect_cons_decile)  %>%
+  summarize(subsidy = survey_mean(subsidy_per_kwh_pos, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl_month_subs_kwh_bydecil
+```
+
+
+#Using also subsidies with negative values for DAC
+
+## Average Monthly Subsidies
+```{r}
+tbl_month_subs_bydecil <- dstrata %>%
+  #group_by(income_decile)  %>%
+  summarize(subsidy = survey_mean(bill_subsidy_month, na.rm= TRUE, vartype = c("ci"))) 
+#bill_subsidy_month
+
+tbl_month_subs_bydecil
+```
+
+## Average Monthly Subsidies by Consumption Decile
+```{r}
+tbl_month_subs_bydecil <- dstrata %>%
+  group_by(elect_cons_decile)  %>%
+  summarize(subsidy = survey_mean(bill_subsidy_month, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl_month_subs_bydecil
+```
+
+## Total Monthly Subsidies
+```{r}
+tbl_month_subs_bydecil <- dstrata %>%
+  summarize(subsidy = survey_total(bill_subsidy_month, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl_month_subs_bydecil
+```
+
+## Total Monthly Subsidies by Consumption Decile
+```{r}
+#income_decile  elect_cons_decile
+tbl_month_subs_bydecil <- dstrata %>%
+  group_by(elect_cons_decile)  %>%
+  summarize(subsidy = survey_total(bill_subsidy_month, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl_month_subs_bydecil
+```
+
+## Subsidies per KWh
+```{r}
+tbl_month_subs_kwh <- dstrata %>%
+  summarize(subsidy = survey_mean(subsidy_per_kwh, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl_month_subs_kwh
+```
+## Subsidies per KWh by Consumption Decile
+```{r}
+tbl_month_subs_kwh_bydecil <- dstrata %>%
+  group_by(elect_cons_decile)  %>%
+  summarize(subsidy = survey_mean(subsidy_per_kwh, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl_month_subs_kwh_bydecil
+```

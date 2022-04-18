@@ -30,10 +30,10 @@ EstimateBillConsumptionKWh <- function (df.bill, df.tariff.sch, periodicity.bill
   df.bill.sub <- subset(df.bill, df.bill$is.summer1 == is.summer)
   df.bill.sub <- subset(df.bill.sub, df.bill.sub$bill.period1 == periodicity.bill)
   df.bill.sub <- subset(df.bill.sub, df.bill.sub$tipo_tarif.f == tariff.type & 
-                          df.bill.sub$bill.amount1 >=0)
+                          df.bill.sub$bill.amount1 >= 0)
   
   if(periodicity.bill == "bi-monthly"){
-    df.bill.sub$bill.notax.tmp <- df.bill.sub$bill.notax / 2
+    df.bill.sub$bill.notax.tmp <- df.bill.sub$bill.notax / 2.0
   } else{
     df.bill.sub$bill.notax.tmp <- df.bill.sub$bill.notax
   }

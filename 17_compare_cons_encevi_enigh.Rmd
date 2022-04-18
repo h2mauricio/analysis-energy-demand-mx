@@ -1,0 +1,192 @@
+---
+title: "ENIGH 2018 - Subsidies Estimation by Socioeconomic Status"
+author: '[Mauricio Hernandez](http://mauricioh2.com)'
+date: "`r Sys.Date()`"
+subtitle: Estimate Subsidies
+bibliography: energy_mex.bib
+---
+
+
+```{r}
+#Remove all objects from current workspace and call garbage collector
+rm(list=ls())
+gc()
+
+source("./script/general_setup_functions.R")
+#source("./script/compute_kwhumption_bill.R")
+#source("./script/get_bill_periodicity.R")
+```
+
+
+```{r knitr_init, include=FALSE}
+#options(max.print = "75")
+opts_chunk$set(echo = TRUE,
+	             cache = FALSE,
+               prompt = FALSE,
+               tidy = FALSE,
+               comment = NA,
+               message = FALSE,
+               warning = FALSE,
+               fig.path = 'figures/')
+```
+
+```{r setup, include=FALSE}
+#Generates the css needed by summarytools
+st_css()
+
+#devtools::install_github("ropensci/plotly")
+knitr::opts_chunk$set(fig.width = 8, collapse = TRUE)
+
+knitr::knit_hooks$set(output = function(x, options){
+  if(!is.null(options$max_height)){
+    paste('<pre style = "max-height:',
+          options$max_height, 
+          ';float: left; width: 910px; overflow-y: auto;">',
+          x,
+          "</pre>",
+          sep = "")
+  } else{
+    x
+  }
+})
+```
+
+
+```{r}
+df_enc_kwh <- read.csv("./output/tables/encevi_cons_by_SES_region_summer.csv", 
+                           header = TRUE, na.strings="")
+
+df_enigh_kwh <- read.csv("./output/tables/enigh_cons_by_SES_region.csv", 
+                           header = TRUE, na.strings="")
+
+head(df_enigh_kwh)
+```
+
+
+```{r}
+df_enc_kwh <- subset(df_enc_kwh, is_summer1=="Yes", select = -c(is_summer1))
+head(df_enc_kwh)
+```
+
+```{r}
+df_enc_kwh$source <-"ENCEVI"
+df_enigh_kwh$source <-"ENIGH"
+
+df_kwh = rbind(df_enc_kwh, df_enigh_kwh)
+df_kwh
+```
+```{r}
+
+df_kwh$region <- factor(df_kwh$region_f,
+                     levels = c('Extremely hot', 'Tropical', 'Temperate', 'All'),
+                     labels = c('Extremetely hot', 'Tropical', 'Temperate', 'All'))
+
+df_kwh$SES <- factor(df_kwh$ses,
+                     levels = c('Low', 'Mid-Low', 'Mid-High', 'High', 'All'),
+                     labels = c('Low', 'Mid-Low', 'Mid-High', 'High', 'All'))
+
+
+df_kwh_enigh<- subset(df_kwh, source=="ENIGH")
+df_kwh_enigh
+
+df_kwh_encevi<- subset(df_kwh, source=="ENCEVI")
+df_kwh_encevi
+```
+
+
+```{r}
+#Make Bar Plot
+plot.cons.month <- ggplot(df_kwh_enigh, aes(x = SES, y = kwh_month, fill=region)) +
+  geom_bar(stat="identity",position="dodge") + 
+  scale_colour_viridis_d(begin = 0.1, end = 0.9,   option = "plasma", aesthetics = c("fill")) +
+  scale_x_discrete(name= "") +
+  scale_y_continuous(name= "Electricity Consumption [kWh/month]", breaks=c(200, 400, 600, 800, 1000)) +
+  geom_errorbar(position=position_dodge(width=.9), width=.5, color="grey50") + 
+  aes(ymin=kwh_month_low, ymax=kwh_month_upp) +
+  geom_text(aes(label=round(kwh_month, 0)), vjust=2.6, color="white", 
+            position = position_dodge(.9), size=4)
+
+plot.cons.month <- plot.cons.month + theme(axis.text.x = element_text(angle = 90, hjust = 1), 
+                        panel.background = element_rect(fill = "white", colour = NA),
+                        panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                colour = "grey92"), plot.title = element_text(hjust = 0.5))  +  
+  labs(title = "Monthly Consumption per Household by SES and Climatic Region in Mexico - 2018", 
+       subtitle ="Source: ENIGH, 2018") + annotate("text", x = 1, y = 525, label = "Summer Season            ")
+
+plot.cons.month
+# annotation 
+ggsave(plot = plot.cons.month, width = 12, height = 6, dpi = 400, 
+       filename = "./output/fig/kwh_permonth_ses_region_enigh.png")
+```
+```{r}
+#Make Bar Plot
+plot.cons.month <- ggplot(df_kwh_encevi, aes(x = SES, y = kwh_month, fill=region)) +
+  geom_bar(stat="identity",position="dodge") + 
+  scale_colour_viridis_d(begin = 0.1, end = 0.9,   option = "plasma", aesthetics = c("fill")) +
+  scale_x_discrete(name= "") +
+  scale_y_continuous(name= "Electricity Consumption [kWh/month]", breaks=c(200, 400, 600, 800, 1000)) +
+  geom_errorbar(position=position_dodge(width=.9), width=.5, color="grey50") + 
+  aes(ymin=kwh_month_low, ymax=kwh_month_upp) +
+  geom_text(aes(label=round(kwh_month, 0)), vjust=2.6, color="white", 
+            position = position_dodge(.9), size=4)
+
+plot.cons.month <- plot.cons.month + theme(axis.text.x = element_text(angle = 90, hjust = 1), 
+                        panel.background = element_rect(fill = "white", colour = NA),
+                        panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                colour = "grey92"), plot.title = element_text(hjust = 0.5))  +  
+  labs(title = "Monthly Consumption per Household by SES and Climatic Region in Mexico - 2018", 
+       subtitle ="Source: ENCEVI, 2018") + annotate("text", x = 1, y = 525, label = "Summer Season            ")
+
+plot.cons.month
+# annotation 
+ggsave(plot = plot.cons.month, width = 12, height = 6, dpi = 400, 
+       filename = "./output/fig/kwh_permonth_ses_region_encevi.png")
+```
+
+
+```{r}
+plot.cons.month <- ggplot(df_kwh, aes(x = SES, y = kwh_month, fill=region)) +
+  geom_bar(stat="identity",position="dodge") + 
+  #scale_colour_viridis_d(begin = 0.8, end = 0.2,   option = "plasma", aesthetics = c("fill")) +
+  scale_colour_viridis_d(begin = 0.8, end = 0.2,   option = "magma", aesthetics = c("fill")) +
+  scale_x_discrete(name= "") +
+  scale_y_continuous(name= "Electricity Consumption [kWh/month]", breaks=c(200, 400, 600, 800, 1000)) +
+  geom_errorbar(position=position_dodge(width=.9), width=.5, color="grey50") + 
+  aes(ymin=kwh_month_low, ymax=kwh_month_upp) +
+  geom_text(aes(label=round(kwh_month, 0)), vjust=2.6, color="white", 
+            position = position_dodge(.9), size=3.5) +
+    facet_wrap(~ source, ncol = 1, scales = "free_y");
+
+plot.cons.month <- plot.cons.month + theme(axis.text.x = element_text(angle = 90, hjust = 1), 
+                        panel.background = element_rect(fill = "white", colour = NA),
+                        panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                colour = "grey92"), plot.title = element_text(hjust = 0.5))  +  
+  labs(title = "Monthly Consumption per Household by SES and Climatic Region in Mexico - 2018", 
+       subtitle ="Summer Season")
+
+plot.cons.month
+
+ggsave(plot = plot.cons.month, width = 10, height = 8, dpi = 400, 
+       filename = "./output/fig/kwh_permonth_ses_region_compare.png")
+```
+```{r}
+df_kwh
+```
+
+
+
+```{r}
+
+df_kwh %>% 
+  group_by(SES, source) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = source, y = kwh_month, fill = SES)) +
+  geom_bar(stat = "identity", show.legend = F) +
+  facet_grid(~ source, labeller = label_wrap_gen(width=10)) + 
+  coord_flip() +
+  ylim(c(0, 90)) +
+  geom_text(aes(label = round(perc, 1)), hjust = -.1) +
+  theme(strip.text = element_text(size = 12))
+```
+
+

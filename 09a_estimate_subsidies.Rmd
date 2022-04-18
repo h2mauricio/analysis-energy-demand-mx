@@ -1,0 +1,349 @@
+---
+title: "Analysis of ENCEVI 2018"
+author: '[Mauricio Hernandez](http://mauricioh2.com)'
+date: "`r Sys.Date()`"
+subtitle: Estimate Subsidies
+bibliography: energy_mex.bib
+---
+
+
+```{r, include=FALSE}
+#Remove all objects from current workspace and call garbage collector
+rm(list=ls())
+gc()
+
+source("./script/general_setup_functions.R")
+source("./script/compute_consumption_bill.R")
+source("./script/get_bill_periodicity.R")
+```
+
+
+Notes: Dollar Exchange Rate: 	18.70	30-Jun-18, Ref. Banxico, 2021 (https://www.banxico.org.mx/tipcamb/main.do?page=tip&idioma=sp)
+```{r}
+DOLLAR_TO_MXN <- 19.69
+```
+
+```{r knitr_init, include=FALSE}
+#options(max.print = "75")
+opts_chunk$set(echo = TRUE,
+	             cache = FALSE,
+               prompt = FALSE,
+               tidy = FALSE,
+               comment = NA,
+               message = FALSE,
+               warning = FALSE,
+               fig.path = 'figures/')
+```
+
+```{r setup, include=FALSE}
+#Generates the css needed by summarytools
+st_css()
+
+#devtools::install_github("ropensci/plotly")
+knitr::opts_chunk$set(fig.width = 8, collapse = TRUE)
+
+knitr::knit_hooks$set(output = function(x, options){
+  if(!is.null(options$max_height)){
+    paste('<pre style = "max-height:',
+          options$max_height, 
+          ';float: left; width: 910px; overflow-y: auto;">',
+          x,
+          "</pre>",
+          sep = "")
+  } else{
+    x
+  }
+})
+```
+
+**Loading datasets**
+</br>This dataset was obtained with the "06_getting_consumption_statistics.Rmd" notebook.
+```{r}
+
+df.bill.cons <- read.csv("./output/df_bill_wconsump.csv", 
+                           header = TRUE, na.strings="")
+
+df.tariff.scheme  <- read.csv("./output/tables/tariff_cost.csv", 
+                              header = TRUE, na.strings="")
+head(df.tariff.scheme)
+```
+
+Actual cost of electricity is similar for each tariff and for summer and no summer seasons
+The cost per Kwh is $2.802 MXN
+```{r}
+df.tariff.scheme.sub <- subset(df.tariff.scheme, tariff.block.name=="extra",
+                               select= c(tariff, summer, cost.kwh))
+df.tariff.scheme.sub
+```
+
+```{r}
+# for all the tariffs the max. cost per kwh is $2.802
+COST_KWH_CFE <- mean(df.tariff.scheme.sub$cost.kwh)
+COST_KWH_CFE_USD <- COST_KWH_CFE / DOLLAR_TO_MXN
+```
+
+
+## Payments per KWh before taxes
+```{r}
+df.bill.cons$bill.avg1.notax[df.bill.cons$bill.avg1.notax <= min(df.tariff.scheme$cost.kwh)*25] <- NA  
+
+#Price of electricity with subsidies and without subsidies (real price)
+#These values don't include taxes and fees
+df.bill.cons$price.kwh.notax <- df.bill.cons$bill.avg1.notax / df.bill.cons$cons.kWh.med1
+df.bill.cons$price.kwh.notax.usd <- df.bill.cons$price.kwh.notax / DOLLAR_TO_MXN
+df.bill.cons$real.price.kwh <- COST_KWH_CFE
+df.bill.cons$real.price.kwh.usd <-  COST_KWH_CFE_USD
+
+#Daily cost of electricity
+
+#These values don't include taxes and fees
+df.bill.cons$cost.day.notax <- df.bill.cons$price.kwh.notax * df.bill.cons$cons.day.kWh.med1
+df.bill.cons$cost.day.notax.usd <- df.bill.cons$cost.day.notax  / DOLLAR_TO_MXN
+df.bill.cons$real.cost.day <- df.bill.cons$real.price.kwh * df.bill.cons$cons.day.kWh.med1
+df.bill.cons$real.cost.day.usd <- df.bill.cons$real.cost.day / DOLLAR_TO_MXN
+
+#Annual cost of electricity
+#These values don't include taxes and fees
+df.bill.cons$cost.year.notax < - df.bill.cons$cost.day.notax * 365
+df.bill.cons$cost.year.notax.usd <- df.bill.cons$cost.day.notax.usd * 365
+df.bill.cons$real.cost.year <- df.bill.cons$real.cost.day * 365
+df.bill.cons$real.cost.year.usd <- df.bill.cons$real.cost.day.usd * 365
+```
+
+
+##Average annual consumption
+```{r}
+options( survey.lonely.psu = "adjust" )
+dstrata <- df.bill.cons %>%
+  as_survey_design(id = upm, strata = est_dis, weights = factor_sem) 
+
+tbl.month.consumption <- dstrata %>%
+  summarize(mean_month_consumption = survey_mean(cons.month.kWh.med1, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl.month.consumption
+```
+
+```{r}
+40*4
+```
+
+
+```{r}
+# just to check calculations
+#price weighted 
+df.bill.cons$real.cost.year.usd.w <- df.bill.cons$real.cost.year.usd * df.bill.cons$factor_sem
+```
+
+##Price per KWh
+**Price without subsidies**
+```{r}
+options( survey.lonely.psu = "adjust" )
+dstrata <- df.bill.cons %>%
+  as_survey_design(id = upm, strata = est_dis, weights = factor_sem) 
+
+tbl.kwh.price.nosub.usd <- dstrata %>%
+  summarize(mean_price_kwh_usd = survey_mean(real.price.kwh.usd, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl.kwh.price.nosub.usd
+```
+
+**Price with subsidies**
+```{r}
+options(survey.lonely.psu = "adjust" )
+dstrata <- df.bill.cons %>%
+  as_survey_design(id = upm, strata = est_dis, weights = factor_sem) 
+
+tbl.kwh.price.usd <- dstrata %>%
+  summarize(mean_price_kwh_usd = survey_mean(price.kwh.notax.usd, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl.kwh.price.usd
+```
+```{r}
+df.bill.cons.sub <- subset(df.bill.cons, select=c(upm, est_dis, factor_sem, price.kwh.notax, price.kwh.notax.usd))
+
+dstrat.sub <- df.bill.cons.sub %>%
+  as_survey_design(id = upm, strata = est_dis, weights = factor_sem) 
+
+tbl.kwh.price.sub.usd <- dstrat.sub %>%
+  summarize(mean_price_kwh_usd = survey_mean(price.kwh.notax.usd, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl.kwh.price.sub.usd
+```
+
+```{r}
+descr(df.bill.cons.sub)
+```
+
+
+##Price per KWh by SES
+Price with subsidies
+```{r}
+tbl.price.kwh.ses.usd <- dstrata %>% 
+  group_by(SES)  %>%
+  summarize(mean_price_kwh_usd = survey_mean(price.kwh.notax.usd, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl.price.kwh.ses.usd <- na.omit(tbl.price.kwh.ses.usd) 
+
+tbl.price.kwh.ses.usd$SES <- as.character(tbl.price.kwh.ses.usd$SES)
+
+tbl.price.kwh.ses.usd
+```
+
+
+##Price per KWh by Region
+### Price of KWh per Region without subsidies
+```{r}
+tbl.price.kwh.region.nosub.usd <- dstrata %>% 
+  group_by(region.f)  %>%
+  summarize(mean_price_kwh_usd = survey_mean(real.price.kwh.usd, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl.price.kwh.region.nosub.usd <- na.omit(tbl.price.kwh.region.nosub.usd) 
+
+tbl.price.kwh.region.nosub.usd
+```
+
+### Price of KWh per Region with subsidies
+```{r}
+#df.bill.cons$
+tbl.price.kwh.region.usd <- dstrata %>% 
+  group_by(region.f)  %>%
+  summarize(mean_price_kwh_usd = survey_mean(price.kwh.notax.usd, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl.price.kwh.region.usd <- na.omit(tbl.price.kwh.region.usd) 
+tbl.price.kwh.region.usd
+```
+##Price per KWh by Region and SES
+###Price per KWh by Region and SES with subsidies
+```{r}
+#df.bill.cons$
+tbl.mean.price.kwh.usd <- dstrata %>% 
+  group_by(SES, region.f)  %>%
+  summarize(mean_price_kwh_usd = survey_mean(price.kwh.notax.usd, na.rm= TRUE, vartype = c("ci"))) 
+
+tbl.mean.price.kwh.usd <- na.omit(tbl.mean.price.kwh.usd) 
+tbl.mean.price.kwh.usd
+```
+
+```{r}
+#include estimation for all regions
+tbl.price.kwh.region.usd['SES'] = 'All'
+tbl.mean.price.kwh.usd <- rbind(tbl.mean.price.kwh.usd, tbl.price.kwh.region.usd)
+
+tbl.mean.price.kwh.usd$SES <- factor(tbl.mean.price.kwh.usd$SES,
+                               levels = c('Low', 'Mid-Low', 'Mid-High', 'High', 'All'),
+                               labels = c('Low', 'Mid-Low', 'Mid-High', 'High', 'All'))
+
+tbl.mean.price.kwh.usd$region.f <- factor(tbl.mean.price.kwh.usd$region.f,
+                               levels = c('Extremely hot', 'Temperate', 'Tropical', 'All'),
+                               labels = c('Extremely hot', 'Temperate', 'Tropical', 'All'))
+
+tbl.mean.price.kwh.usd <- tbl.mean.price.kwh.usd %>%
+  rename(Region = region.f)
+
+#write.csv(tbl.mean.cons.ses,"./output/tables/tbl.mean.cons.ses.month.csv", row.names = TRUE)
+tbl.mean.price.kwh.usd
+```
+
+#Consumption by SES
+```{r}
+#Make Bar Plot
+plot.price.kwh <- ggplot(tbl.mean.price.kwh.usd, aes(x = Region, y = mean_price_kwh_usd, fill=SES)) +
+  geom_bar(stat="identity",position="dodge") + 
+  scale_colour_viridis_d(begin = 0.1, end = 0.9, option = "inferno", aesthetics = c("fill")) +
+  scale_x_discrete(name= "") +
+  scale_y_continuous(name= "Electricity Price [USD/kWh]", breaks=c(200, 400, 600, 800, 1000)) +
+  geom_errorbar(position=position_dodge(width=.9), width=.5, color="grey50") + 
+  aes(ymin=mean_price_kwh_usd_low, ymax=mean_price_kwh_usd_upp) +
+  geom_text(aes(label=round(mean_price_kwh_usd, 3)), vjust=-0.2, color="black", 
+            position = position_dodge(.9), size=3)
+
+plot.price.kwh <- plot.price.kwh + theme(axis.text.x = element_text(angle = 90, hjust = 1), 
+                        panel.background = element_rect(fill = "white", colour = NA),
+                        panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                colour = "grey92"), plot.title = element_text(hjust = 0.5))  +  
+  labs(title = "Price of Electricity per Region and SES in Mexico 2017-2018 (after subsidies)", 
+       caption ="")
+
+plot.price.kwh
+
+#ggsave(plot = plot.price.kwh, width = 12, height = 6, dpi = 400, 
+#       filename = "./output/fig/price_kwh_SES_region_after_subsidies.png")
+
+```
+
+#Total cost of electricity without subsidies 
+
+These calculations don't include fees and taxes
+
+```{r}
+number_households = sum(df.bill.cons$factor_sem) 
+#million of households, according to survey
+print("Million of households: ")
+number_households / 1000000
+```
+
+
+```{r}
+#million of dollars per year
+# No subsidy
+(number_households * tbl.kwh.price.nosub.usd$mean_price_kwh_usd * mean(df.bill.cons$cons.day.kWh.med1, na.rm = TRUE)*365 )/ 1000000
+
+#with subsidy
+(number_households * tbl.kwh.price.usd$mean_price_kwh_usd * mean(df.bill.cons$cons.day.kWh.med1, na.rm = TRUE)*365 )/ 1000000
+```
+
+```{r}
+tbl.kwh.price.nosub.usd$mean_price_kwh_usd
+tbl.kwh.price.usd$mean_price_kwh_usd
+```
+
+
+```{r}
+#total GWh consumed
+(sum(df.bill.cons$factor_sem)* mean(df.bill.cons$cons.day.kWh.med1, na.rm = TRUE)*365 )/ 1000000
+```
+
+```{r}
+
+df.bill.cons['bill.tax.fee1.usd'] <- df.bill.cons$bill.amount1 - df.bill.cons$bill.avg1.notax / DOLLAR_TO_MXN
+df.bill.cons['bill.amount.nosubsidy.usd'] <-  df.bill.cons$real.price.kwh.usd * df.bill.cons$cons.kWh.med1
+df.bill.cons['bill.amount.withsubsidy.usd'] <-  df.bill.cons$price.kwh.notax * df.bill.cons$cons.kWh.med1 / DOLLAR_TO_MXN
+
+df.bill.cons['bill.subsidy1.usd'] <- df.bill.cons$bill.amount.nosubsidy.usd - (df.bill.cons$bill.avg1.notax / DOLLAR_TO_MXN)
+
+
+df.bill.temp <- subset(df.bill.cons,
+                        select=c('bill.tax.fee1.usd', 'bill.amount1', 'real.price.kwh.usd', 'cons.kWh.med1',  'price.kwh.notax',
+                                 'bill.avg1.notax', 'bill.amount.nosubsidy.usd', 
+                                 'bill.amount.withsubsidy.usd', 'bill.subsidy1.usd','factor_sem'))
+
+
+stat.costs <- descr(df.bill.temp, 
+                           weights = df.bill.temp$factor_sem, 
+                           round.digits = 3,
+                           stats = c("mean", "sd", "min", 
+                                     "med", "max", "pct.valid"), 
+                           transpose = TRUE)
+
+stat.costs <- as.data.frame(stat.costs)
+
+knitr::kable(stat.costs, 
+      label = 'table-stats-kwh-price', digits = 3, align = 'c', booktabs = TRUE,
+  caption = 'Summary statistics') %>%
+  kable_styling(bootstrap_options = c("striped", "hover", 
+                                      "condensed", "responsive"),
+                fixed_thead = T) %>%
+  scroll_box(width = "100%")
+```
+```{r}
+#values that have a bill below the minimum charge are discarded
+df.bill.cons$bill.avg1.notax[df.bill.cons$bill.avg1.notax <= min(df.tariff.scheme$cost.kwh)*25] <- NA  
+
+df.bill.cons.sub <- subset(df.bill.cons, bill.avg1.notax	<= min(df.tariff.scheme$cost.kwh)*25)
+df.bill.cons.sub
+```
+
+```{r}
+#23.731 / 39.28
+
+```
