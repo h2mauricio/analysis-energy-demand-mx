@@ -36,6 +36,8 @@ UsePackage("webshot")
 UsePackage("srvyr")
 UsePackage("foreign")      #read INEGI tables with different formats
 UsePackage("doBy")         #to order tables based on different variables
+UsePackage("splitTools")
+UsePackage("ranger")
 
 #webshot::install_phantomjs()
 

@@ -24,8 +24,8 @@ rm(list=ls())
 gc()
 
 source("./script/general_setup_functions.R")
-```
 
+```
 
 ```{r knitr_init, include=FALSE}
 #options(max.print = "75")
@@ -62,10 +62,156 @@ knitr::knit_hooks$set(output = function(x, options){
 
 
 ```{r}
-df_encevi_hh <- read.csv("./output/df_bill_wconsump.csv", 
-                           header = TRUE, na.strings="")
-df_encevi_hh <- df_encevi_hh %>%
-  rename(folioviv = ï..folio)
+#Read data
+df_encevi <- read.csv("./output/encevi_db_clean_041722.csv", encoding="UTF-8",
+                           header = TRUE, na.strings=NA)
 
-head(df_encevi_hh)
+names(df_encevi)[1] <- 'folioviv'
+
+head(df_encevi)
+```
+
+```{r}
+df_func_params <- read.csv("./output/tables/goodness_fit_params_month_12.csv", encoding="UTF-8",
+                           header = TRUE, na.strings="")
+
+df_func_params
+```
+
+```{r}
+#Variables: bill_days_raw, bill_days, bill_days_was_estimated, bill_period, bill_ini_month_raw
+
+#bill_period = bi-monthly
+# based on variable values
+df_encevi_sub <- df_encevi[ which(df_encevi$bill_days_was_estimated==0 & df_encevi$bill_period == "bi-monthly"), ]
+
+df_encevi_sub <- subset(df_encevi_sub,
+                       select=c(bill_days_raw, bill_days, bill_days_was_estimated, bill_period, bill_ini_month_raw))
+head(df_encevi_sub)
+```
+
+```{r}
+
+GetSyntheticValues  <- function(month_function, month ,param01, param02, day = 60){
+  set.seed(91230)
+  if (month_function == "Log-Normal") {
+    synthetic.value <- qlnorm(runif(1, 0.01, 0.99), meanlog = param01, 
+                              sdlog = param02, log = FALSE)
+  }
+  
+  else if (month_function == "Logistic"){
+    synthetic.value <- qlogis(runif(1, 0.01, 0.99), location = param01, scale = param02)
+  }
+  
+  else if (month_function == "Normal"){
+    synthetic.value <- qnorm(runif(1, 0.01, 0.99), mean=param01, sd=param02)
+  }
+  
+  else if (month_function == "Weibull"){
+    synthetic.value <- qweibull(runif(1, 0.01, 0.99), shape = param01, scale = param02)
+  }
+  
+  else{
+   print(paste0("Function: ", month_function, " and month: ", month))
+    synthetic.value = day
+  }
+    
+  return(synthetic.value)
+};
+```
+
+```{r}
+arr_param01 <- array(0, dim=c(12,1))
+arr_param02 <- array(0, dim=c(12,1))
+arr_dist_months <- array(0, dim=c(12,1))
+ 
+# Create a list containing a vector, a matrix and a list.
+list_func <- list(c(1,2,3,4,5,6,7,8,9,10,11,12), 
+                  c("Log-Normal", "Logistic", "Logistic", "Logistic", 
+                    "Weibull", "Weibull", "Logistic", "Weibull", "Log-Normal", 
+                    "Log-Normal", "Log-Normal", "Logistic"))
+
+# Give names to the elements in the list.
+names(list_func) <- c("month", "fit_function")
+
+#assign parameters to each month
+for (month in list_func$month) {
+    arr_dist_months[month] = list_func$fit_function[month]
+    
+    if (arr_dist_months[month] == "Logistic"){
+      arr_param01[month] = df_func_params$Logistic[df_func_params$month == month & df_func_params$parameter == 1]
+      arr_param02[month] = df_func_params$Logistic[df_func_params$month == month & df_func_params$parameter == 2]
+    }
+    
+    else if (arr_dist_months[month] == "Log-Normal") {
+     arr_param01[month] = df_func_params$Log.Normal[df_func_params$month == month & df_func_params$parameter == 1]
+      arr_param02[month] = df_func_params$Log.Normal[df_func_params$month == month & df_func_params$parameter == 2]
+  }
+    
+    else if (arr_dist_months[month] == "Weibull"){
+      arr_param01[month] = df_func_params$Weibull[df_func_params$month == month & df_func_params$parameter == 1]
+      arr_param02[month] = df_func_params$Weibull[df_func_params$month == month & df_func_params$parameter == 2]
+    }
+}
+
+df_encevi_sub$new_days <-NA
+
+
+for (row in 1:nrow(df_encevi_sub)) {
+  if (df_encevi_sub[row, "bill_days_was_estimated"] == 0 & df_encevi_sub[row, "bill_period"] == "bi-monthly")
+  {
+    month <- df_encevi_sub[row, "bill_ini_month_raw"]
+
+    df_encevi_sub[row, "new_days"] <- GetSyntheticValues(list_func$fit_function[month], 
+                                                         month, arr_param01[month], 
+                                                         arr_param02[month], 50) %>%
+      round(digits =0)
+  }
+}
+
+                                 
+write.csv(df_encevi_sub,"./output/dummy_estimated_days.csv", row.names = FALSE)
+```
+
+```{r}
+set.seed(3451)
+inds <- partition(df_encevi_sub$bill_days_raw, p = c(train = 0.7, test = 0.3))
+
+train <- df_encevi_sub[inds$train, ]
+#valid <- df_encevi_sub[inds$valid, ]
+test <- df_encevi_sub[inds$test, ]
+```
+
+
+
+```{r}
+# Root-mean-squared error function used to evaluate results
+rmse <- function(y, pred) {
+  sqrt(mean((y - pred)^2))
+}
+
+mape <- function (y, pred){
+  mean(abs((y-pred)/y)) * 100
+  
+}
+
+rmse(test$bill_days_raw, test$new_days)
+mape(test$bill_days_raw, test$new_days)
+```
+
+
+```{r}
+# Root-mean-squared error function used to evaluate results
+rmse <- function(y, pred) {
+  sqrt(mean((y - pred)^2))
+}
+
+mape <- function (y, pred){
+  mean(abs((y-pred)/y)) * 100
+  
+}
+
+test$new_days2 <- 61 
+rmse(test$bill_days_raw, test$new_days2)
+mape(test$bill_days_raw, test$new_days2)
 ```

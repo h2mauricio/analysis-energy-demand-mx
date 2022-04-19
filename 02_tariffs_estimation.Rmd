@@ -1213,15 +1213,6 @@ write.csv(df.enc.dwell.modif, file.path, row.names = TRUE, na="")
 
 
 
-
-
-
-
-
-
-
-
-
 ### Consumption by Dwelling Size
 ```{r}
 stat.month.kwh.dwellsize <- psych::describeBy(df.enc.dwell.bill$cons.month.kwh.hig1, 
