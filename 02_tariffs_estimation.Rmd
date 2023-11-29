@@ -380,6 +380,98 @@ setnames(df.enc.dwell,
                "bill.end.date", "year.ini", "year.end", "num_month_bill"), 
          new=c("bill.days1", "bill.days1.valid", "bill.ini.date1", 
                "bill.end.date1", "year.ini1", "year.end1", "num_month_bill.x"))
+<<<<<<< HEAD
+```
+
+
+```{r}
+descr(df.enc.dwell$bill.days1.valid, 
+     # weights = df.enc.dwell$factor_sem, 
+      stats = c("mean", "sd", "min", "med", "max", "n.valid", "pct.valid"), 
+      transpose = TRUE)
+```
+
+*Monthly bills before data recovery*
+```{r}
+CreateMonthBillHistPlots <- function(month, legend){
+  #Ref: https://plotly.com/r/text-and-annotations/
+  sample_size = sum(complete.cases(df.enc.dwell$bill.days1.valid[df.enc.dwell$mes_inic == month & df.enc.dwell$num_month_bill > 0.95 & df.enc.dwell$num_month_bill <= 1.5 ]), na.rm = TRUE)
+  
+  f <- list(
+  family = "Courier New, monospace",
+  size = 18,
+  color = "#7f7f7f ")
+  
+  a <- list(
+    x = 37,
+    y = 0.75,
+    text = paste0("n=", sample_size),
+    xref = "x",
+    yref = "y",
+    showarrow = FALSE,
+    arrowhead = 7,
+    ax = 20,
+    ay = -40,
+    titlefont = f)
+  
+  x <- list(
+    title = "x Axis",
+    titlefont = f)
+  
+  y <- list(
+    title = "y Axis",
+    titlefont = f)
+
+
+  fit <- density(df.enc.dwell$bill.days1.valid[df.enc.dwell$mes_inic == month & df.enc.dwell$num_month_bill > 0.95 & df.enc.dwell$num_month_bill <= 1.5 ], na.rm = TRUE)
+  
+  myplt <- plot_ly(x = df.enc.dwell$bill.days1.valid[df.enc.dwell$mes_inic == month & df.enc.dwell$num_month_bill > 0.95 & df.enc.dwell$num_month_bill <= 1.5 ],
+               type = "histogram",
+               histnorm = "probability",
+               name = legend) %>%
+      #add_trace(x = fit$x, y = fit$y, yaxis = "y2", name = "Density") %>%
+    layout(title = 'Distribution of Days Billed Reported by ENCEVI (Monthly Bills) - Before Data Recovery',
+           xaxis = list(title = "days", range = c(20, 40)), 
+           yaxis = list(title = "Probability", range = c(0, 0.9)),
+           legend = list(title = "month"),
+           #yaxis2 = list(overlaying = "y", side = "right")
+           annotations = a
+           )
+  myplt
+}
+
+plotList <- function(seq_months) {
+    lapply(seq_len(length(seq_months)), function(x) CreateMonthBillHistPlots(seq_months))
+}
+
+s1 <- subplot(CreateMonthBillHistPlots(1, 'jan'), CreateMonthBillHistPlots(2, 'feb'), 
+              CreateMonthBillHistPlots(3, 'mar'), CreateMonthBillHistPlots(4, 'apr'), 
+              nrows = 1, shareX = TRUE, shareY = TRUE)
+
+s2 <- subplot(CreateMonthBillHistPlots(5, 'may'), CreateMonthBillHistPlots(6, 'jun'), 
+              CreateMonthBillHistPlots(7, 'jul'), CreateMonthBillHistPlots(8, 'aug'),  
+              nrows = 1, shareX = TRUE, shareY = TRUE)
+
+s3 <- subplot(CreateMonthBillHistPlots(9, 'sep'), CreateMonthBillHistPlots(10, 'oct'), 
+              CreateMonthBillHistPlots(11, 'nov'), CreateMonthBillHistPlots(12, 'dec'),  
+              nrows = 1, shareX = TRUE, shareY = TRUE)
+
+fig <- subplot(s1, s2, s3, nrows = 3, margin = 0.04, heights = c(0.33, 0.33, 0.34)) 
+
+fig
+
+plotly_IMAGE(fig, format = "png", 
+             out_file = "./output/fig/hist_bill_period_per_month_monthly_before.png")
+```
+
+*Bimontly bills before data recovery*
+```{r}
+CreateBimonthBillHistPlots<-function(month, legend){
+  #Ref: https://plotly.com/r/text-and-annotations/
+  sample_size = sum(complete.cases(df.enc.dwell$bill.days1.valid[df.enc.dwell$mes_inic == month & df.enc.dwell$num_month_bill > 1.5 & df.enc.dwell$num_month_bill <= 2.5 ]), na.rm = TRUE)
+  
+  f <- list(
+=======
 ```
 
 
@@ -531,10 +623,242 @@ s3 <- subplot(CreateBimonthBillHistPlots(9, 'sep'), CreateBimonthBillHistPlots(1
               nrows = 1, shareX = TRUE, shareY = TRUE)
 
 f <- list(
+>>>>>>> 9248e48701899e5efeb71c4495281c9f2a84be4b
   family = "Courier New, monospace",
   size = 18,
   color = "#7f7f7f ")
   
+<<<<<<< HEAD
+  a <- list(
+    x = 68,
+    y = 0.5,
+    text = paste0("n=", sample_size),
+    xref = "x",
+    yref = "y",
+    showarrow = FALSE,
+    arrowhead = 7,
+    ax = 20,
+    ay = -40,
+    titlefont = f)
+  
+  x <- list(
+    title = "x Axis",
+    titlefont = f)
+  
+  y <- list(
+    title = "y Axis",
+    titlefont = f)
+
+
+  fit <- density(df.enc.dwell$bill.days1.valid[df.enc.dwell$mes_inic == month & df.enc.dwell$num_month_bill > 1.5 & df.enc.dwell$num_month_bill <= 2.5 ], na.rm = TRUE)
+  
+  myplt <- plot_ly(x = df.enc.dwell$bill.days1.valid[df.enc.dwell$mes_inic == month & df.enc.dwell$num_month_bill > 1.5 & 
+                                            df.enc.dwell$num_month_bill <= 2.5 ],
+               type = "histogram",
+               histnorm = "probability",
+               name = legend) %>%
+      #add_trace(x = fit$x, y = fit$y, yaxis = "y2", name = "Density") %>%
+    layout(title = 'Distribution of Days Billed Reported by ENCEVI (Bi-Monthly Bills) - Before Data Recovery',
+           xaxis = list(title = "days", range = c(50, 70)), 
+           yaxis = list(title = "Probability"),
+           legend = list(title = "month"),
+           #yaxis2 = list(overlaying = "y", side = "right")
+           annotations = a
+           )
+  myplt
+}
+
+
+plotList <- function(seq_months) {
+    lapply(seq_len(length(seq_months)), function(x) CreateBimonthBillHistPlots(seq_months))
+}
+
+s1 <- subplot(CreateBimonthBillHistPlots(1, 'jan'), CreateBimonthBillHistPlots(2, 'feb'), 
+              CreateBimonthBillHistPlots(3, 'mar'), CreateBimonthBillHistPlots(4, 'apr'), 
+              nrows = 1, shareX = TRUE, shareY = TRUE)
+
+s2 <- subplot(CreateBimonthBillHistPlots(5, 'may'), CreateBimonthBillHistPlots(6, 'jun'), 
+              CreateBimonthBillHistPlots(7, 'jul'), CreateBimonthBillHistPlots(8, 'aug'),  
+              nrows = 1, shareX = TRUE, shareY = TRUE)
+
+s3 <- subplot(CreateBimonthBillHistPlots(9, 'sep'), CreateBimonthBillHistPlots(10, 'oct'), 
+              CreateBimonthBillHistPlots(11, 'nov'), CreateBimonthBillHistPlots(12, 'dec'),  
+              nrows = 1, shareX = TRUE, shareY = TRUE)
+
+f <- list(
+  family = "Courier New, monospace",
+  size = 18,
+  color = "#7f7f7f ")
+  
+x <- list(
+  title = "x Axis",
+  titlefont = f)
+
+y <- list(
+  title = "y Axis",
+  titlefont = f)
+
+
+fig <- subplot(s1, s2, s3, nrows = 3, margin = 0.04, heights = c(0.33, 0.33, 0.34)) 
+fig
+
+plotly_IMAGE(fig, format = "png", 
+             out_file = "./output/fig/hist_bill_period_per_month_bimonthly_before.png")
+```
+
+
+```{r}
+#Store data before recovery
+df.enc.dwell.unmod <- merge(df.enc.dwell, df.bill.dates, by="folio")
+
+write.csv(df.enc.dwell, "./output/encevi_dwelling_merg_unmod.csv", 
+           row.names=TRUE, na="")
+```
+
+### Data Recovery
+Recovering only  bills with monthly periodicity
+```{r}
+#Loop to get median value of months in each bill with a monthly & bimonthly period 
+for (month in seq(1, 12, 1)) {
+    median_month <- median(df.bill.dates$bill.days.valid[df.bill.dates$num_month_bill >= 0.7 & 
+                                                                 df.bill.dates$num_month_bill <= 1.45 & 
+                                                                 df.bill.dates$mes_inic == month], na.rm = TRUE)
+        
+    df.bill.dates$bill.days.valid[df.bill.dates$num_month_bill >= 0.7 & 
+                                          df.bill.dates$num_month_bill <= 1.45 & 
+                                          is.na(df.bill.dates$bill.days.valid) & 
+                                          df.bill.dates$mes_inic == month ] <- median_month
+    
+
+ 
+#    median_month <- median(df.bill.dates$bill.days.valid[df.bill.dates$num_month_bill > 0.95 & 
+#                                                           df.bill.dates$num_month_bill <= 1.5 & 
+#                                                           df.bill.dates$mes_inic == month], na.rm = TRUE)
+    
+#    df.bill.dates$bill.days.valid[df.bill.dates$num_month_bill > 0.95 & 
+#                                          df.bill.dates$num_month_bill <= 1.5 & 
+#                                          is.na(df.bill.dates$bill.days.valid) & 
+#                                          df.bill.dates$mes_inic == month ] <- median_month
+  
+    
+  #  median_bimonth <- median(df.bill.dates$bill.days.valid[df.bill.dates$num_month_bill > 1.5 & 
+  #                                                           df.bill.dates$num_month_bill <= 2.5 & 
+  #                                                           df.bill.dates$mes_inic == month], na.rm = TRUE) 
+    
+  #  df.bill.dates$bill.days.valid[df.bill.dates$num_month_bill > 1.5 & 
+  #                                        df.bill.dates$num_month_bill <= 2.5 & 
+  #                                        is.na(df.bill.dates$bill.days.valid) & 
+  #                                        df.bill.dates$mes_inic == month] <- median_bimonth
+}
+
+descr(df.bill.dates, stats = c("mean", "sd", "min", "med", "max", "n.valid", "pct.valid"), transpose = TRUE)
+```
+
+**Merging bill dates dataframe after recovering monthly bills with ENCEVI dataframe**
+```{r}
+df.enc.dwell.modif <- merge(df.enc.dwell, df.bill.dates, by="folio")
+
+df.enc.dwell.modif <- subset (df.enc.dwell.modif, select = -c(bill.days1, bill.days1.valid, bill.ini.date1, bill.end.date1, year.ini1, year.end1))
+
+setnames(df.enc.dwell.modif, 
+         old=c("bill.days","bill.days.valid", "bill.ini.date", 
+               "bill.end.date", "year.ini", "year.end", "num_month_bill.x"), 
+         new=c("bill.days1", "bill.days1.valid", "bill.ini.date1", 
+               "bill.end.date1", "year.ini1", "year.end1", "num_month_bill"))
+```
+
+```{r}
+descr(df.enc.dwell.modif$bill.days1.valid, 
+      stats = c("mean", "sd", "min", "med", "max", "n.valid", "pct.valid"), 
+      transpose = TRUE)
+```
+
+
+## Histogram of Monthly Bills After data recovery
+```{r}
+CreateMonthBillHistPlots<-function(month, legend){
+  #Ref: https://plotly.com/r/text-and-annotations/
+  sample_size = sum(complete.cases(df.enc.dwell.modif$bill.days1.valid[df.enc.dwell.modif$mes_inic1 == month & df.enc.dwell.modif$num_month_bill > 0.95 & 
+                                            df.enc.dwell.modif$num_month_bill <= 1.5 ]), na.rm = TRUE)
+  
+  f <- list(
+  family = "Courier New, monospace",
+  size = 18,
+  color = "#7f7f7f ")
+  
+  a <- list(
+    x = 37,
+    y = 0.75,
+    text = paste0("n=", sample_size),
+    xref = "x",
+    yref = "y",
+    showarrow = FALSE,
+    arrowhead = 7,
+    ax = 20,
+    ay = -40,
+    titlefont = f)
+  
+  x <- list(
+    title = "x Axis",
+    titlefont = f)
+  
+  y <- list(
+    title = "y Axis",
+    titlefont = f)
+
+
+  fit <- density(df.enc.dwell.modif$bill.days1.valid[df.enc.dwell.modif$mes_inic1 == month & df.enc.dwell.modif$num_month_bill > 0.95 & df.enc.dwell.modif$num_month_bill <= 1.5 ], na.rm = TRUE)
+  
+  myplt <- plot_ly(x = df.enc.dwell.modif$bill.days1.valid[df.enc.dwell.modif$mes_inic1 == month & df.enc.dwell.modif$num_month_bill > 0.95 & df.enc.dwell.modif$num_month_bill <= 1.5 ],
+               type = "histogram",
+               histnorm = "probability",
+               name = legend) %>%
+      #add_trace(x = fit$x, y = fit$y, yaxis = "y2", name = "Density") %>%
+    layout(title = 'Distribution of Days Billed Reported by ENCEVI (Monthly Bills) - After Data Recovery',
+           xaxis = list(title = "days", range = c(20, 40)), 
+           yaxis = list(title = "Probability", range = c(0, 0.9)),
+           legend = list(title = "month"),
+           #yaxis2 = list(overlaying = "y", side = "right")
+           annotations = a
+           )
+  myplt
+}
+
+
+plotList <- function(seq_months) {
+    lapply(seq_len(length(seq_months)), function(x) CreateMonthBillHistPlots(seq_months))
+}
+
+s1 <- subplot(CreateMonthBillHistPlots(1, 'jan'), CreateMonthBillHistPlots(2, 'feb'), 
+              CreateMonthBillHistPlots(3, 'mar'), CreateMonthBillHistPlots(4, 'apr'), 
+              nrows = 1, shareX = TRUE, shareY = TRUE)
+
+s2 <- subplot(CreateMonthBillHistPlots(5, 'may'), CreateMonthBillHistPlots(6, 'jun'), 
+              CreateMonthBillHistPlots(7, 'jul'), CreateMonthBillHistPlots(8, 'aug'),  
+              nrows = 1, shareX = TRUE, shareY = TRUE)
+
+s3 <- subplot(CreateMonthBillHistPlots(9, 'sep'), CreateMonthBillHistPlots(10, 'oct'), 
+              CreateMonthBillHistPlots(11, 'nov'), CreateMonthBillHistPlots(12, 'dec'),  
+              nrows = 1, shareX = TRUE, shareY = TRUE)
+
+f <- list(
+  family = "Courier New, monospace",
+  size = 18,
+  color = "#7f7f7f ")
+  
+x <- list(
+  title = "x Axis",
+  titlefont = f)
+
+y <- list(
+  title = "y Axis",
+  titlefont = f)
+
+
+fig <- subplot(s1, s2, s3, nrows = 3, margin = 0.04, heights = c(0.33, 0.33, 0.34)) 
+
+fig
+=======
 x <- list(
   title = "x Axis",
   titlefont = f)
@@ -839,6 +1163,7 @@ write.csv(df.fit.stats, file.path, row.names = TRUE)
 
 file.path <- paste0("./output/tables/goodness_fit_params_month_", month,".csv")
 write.csv(df.func.params, file.path, row.names = TRUE)
+>>>>>>> 9248e48701899e5efeb71c4495281c9f2a84be4b
 ```
 Jan lognormal
 Feb	Normal
@@ -853,8 +1178,318 @@ Oct	lognormal
 Nov	lognormal
 Dec	Normal
 
+<<<<<<< HEAD
+## Fitting Distribution
+```{r}
+# Multiplot creates a layout structure for multiple plots in one
+# window. The function accepts ggplot objects via "..." or as a
+# list of objects. Use input "cols" to define the number of
+# columns in the plot layout. Alternatively, input "layout" to
+# define the row/col matrix of plot elements. If "layout" is
+# present, "cols" is ignored. For example, given a layout defined
+# by matrix(c(1,2,3,3), nrow=2, byrow=TRUE), then plot #1 goes in
+# the upper left, #2 goes in the upper right, and #3 will cross
+# the entire bottom row, utilizing both columns.
+ 
+multiplot <- function(..., plotlist = NULL, file, cols = 1, layout = NULL) {
+   # launch the grid graphical system
+   require(grid)
+ 
+   # make a list from the "..." arguments and/or plotlist
+   plots <- c(list(...), plotlist)
+   numPlots = length(plots)
+ 
+   # if layout = NULL, then use 'cols' to determine layout
+   if (is.null(layout)) {
+      # make the panel using ncol; nrow is calculated from ncol
+      layout <- matrix(seq(1, cols * ceiling(numPlots/cols)), ncol = cols, nrow = ceiling(numPlots/cols))
+   }
+ 
+   if (numPlots==1) {
+      print(plots[[1]])
+   } else {
+      # set up the page
+      grid.newpage()
+      pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+      # put each plot, in the correct location
+      for (i in 1:numPlots) {
+         # get the i,j matrix position of the subplot
+         matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+         print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row, layout.pos.col = matchidx$col))
+      }
+   }
+}
+```
+
+
 
 ```{r}
+library(glogis)
+library(fitdistrplus)
+
+#create data frame with 0 rows and 3 columns
+df.fit.stats <- data.frame(matrix(ncol = 8, nrow = 0))
+
+#provide column names
+colnames(df.fit.stats) <- c('ini_month', 'bill_freq','function_dist', 
+                            'Kolmogorov_smirnov_stat', "Cramer_von_stat", 
+                            "Anderson_Darling_stat", "Akaike_info_criteria", 
+                            "Bayesian_info_criteria")
+
+GetFittingStats  <- function(month, period, dist.function, stats){
+  selected.stats = c(month, period, dist.function, stats$ks, stats$ad, 
+                     stats$cvm, stats$aic, stats$bic)
+  selected.stats
+}
+
+
+for (month in 1:12) {
+
+  data= df.enc.dwell.modif$bill.days1.valid[df.enc.dwell.modif$mes_inic1 == month & 
+                                      df.enc.dwell.modif$num_month_bill > 1.5 & 
+                                      df.enc.dwell.modif$num_month_bill <= 2.5 ]
+
+  data_weight= df.enc.dwell.modif$factor_sem[df.enc.dwell.modif$mes_inic1 == month & 
+                                       df.enc.dwell.modif$num_month_bill > 1.5 &
+                                       df.enc.dwell.modif$num_month_bill <= 2.5 ]
+
+  df <- data.frame(data, data_weight)
+  df = na.omit(df)
+
+  img.path <- paste0("./output/fig/emprirical_dist_month_", month,".jpg")
+  jpeg(img.path)
+  descdist(df$data, boot=2000)
+  dev.off()
+
+  flog <- fitdist(df$data, "logis")
+  fg <- fitdist(df$data, "gamma")
+  fln <- fitdist(df$data, "lnorm")
+  fw <- fitdist(df$data, "weibull")
+  fn <- fitdist(df$data, "norm")
+  fexp <- fitdist(df$data, "exp")
+  #fcauch <- fitdist(df$data,"cauchy")
+
+  #set.seed(1234)
+  #x4 <- rweibull(n=1000,shape=2,scale=1)
+  # fit of the good distribution
+  #f4 <- fitdist(x4,"weibull")
+  # fit of a bad distribution
+
+  (stat.log <- gofstat(flog, fitnames=c("Logistic")))
+  (stat.gamma <- gofstat(fg, fitnames=c("Gamma")))
+  (stat.lnorm <- gofstat(fln, fitnames=c("Log-Normal")))
+  (stat.weib <-gofstat(fw, fitnames=c("Weibull")))
+  (stat.norm <- gofstat(fn, fitnames=c("Normal")))
+  (stat.exp <- gofstat(fexp, fitnames=c("Exponential")))
+  #(stat.cauchy <- gofstat(fcauch, fitnames=c("Cauchy")))
+
+  df.fit.stats[nrow(df.fit.stats) + 1,] <- GetFittingStats(month, 'bimonthly', 'Logistic', stat.log)
+  df.fit.stats[nrow(df.fit.stats) + 1,] <- GetFittingStats(month, 'bimonthly', 'Gamma', stat.gamma)
+  df.fit.stats[nrow(df.fit.stats) + 1,] <- GetFittingStats(month, 'bimonthly', 'Log-Normal', stat.lnorm)
+  df.fit.stats[nrow(df.fit.stats) + 1,] <- GetFittingStats(month, 'bimonthly', 'Weibull', stat.weib)
+  df.fit.stats[nrow(df.fit.stats) + 1,] <- GetFittingStats(month, 'bimonthly', 'Normal', stat.norm)
+  df.fit.stats[nrow(df.fit.stats) + 1,] <- GetFittingStats(month, 'bimonthly', 'Exponential', stat.exp)
+  
+  if (month == 1){
+    df.func.params <- as.data.frame(cbind(c(month, month), c(1,2), flog$estimate, fg$estimate, 
+                            fln$estimate,  fw$estimate, fn$estimate, fexp$estimate))
+
+  }
+  else{
+    df.func.params <- rbind(df.func.params, as.data.frame(cbind(c(month, month), c(1,2), flog$estimate, 
+                                        fg$estimate, fln$estimate, fw$estimate, 
+                                        fn$estimate, fexp$estimate)))
+  }
+
+  #goodness_fit_stats <- cbind(stat.log, stat.gamma, stat.lnorm, stat.weib, stat.norm, stat.exp, stat.cauchy )
+  #goodness_fit_stats
+}
+colnames(df.func.params) <- c('month', 'parameter','Logistic','Gamma', 'Log-Normal', 'Weibull', 'Normal', 'Exponential') 
+df.fit.stats
+
+#Save results
+file.path <- paste0("./output/tables/goodness_fit_stats_month_", month,".csv")
+write.csv(df.fit.stats, file.path, row.names = TRUE)
+
+file.path <- paste0("./output/tables/goodness_fit_params_month_", month,".csv")
+write.csv(df.func.params, file.path, row.names = TRUE)
+=======
+
+```{r}
+arr.param01 <- array(0, dim=c(12,1))
+arr.param02 <- array(0, dim=c(12,1))
+arr.dist.months <- array(0, dim=c(12,1))
+
+#jan-lognonmal
+month = 1
+arr.dist.months[month] = "Log-Normal"
+arr.param01[month] = df.func.params$`Log-Normal`[df.func.params$month == month & df.func.params$parameter == 1]
+arr.param02[month] = df.func.params$`Log-Normal`[df.func.params$month == month & df.func.params$parameter == 2]
+
+#Feb	Normal
+month = 2
+arr.dist.months[month] = "Normal"
+arr.param01[month] = df.func.params$Normal[df.func.params$month == month & df.func.params$parameter == 1]
+arr.param02[month] = df.func.params$Normal[df.func.params$month == month & df.func.params$parameter == 2]
+
+#Mar	logistic
+month = 3
+arr.dist.months[month] = "Logistic"
+arr.param01[month] = df.func.params$Logistic[df.func.params$month == month & df.func.params$parameter == 1]
+arr.param02[month] = df.func.params$Logistic[df.func.params$month == month & df.func.params$parameter == 2]
+
+#Apr	logistic
+month = 4
+arr.dist.months[month] = "Logistic"
+arr.param01[month] = df.func.params$Logistic[df.func.params$month == month & df.func.params$parameter == 1]
+arr.param02[month] = df.func.params$Logistic[df.func.params$month == month & df.func.params$parameter == 2]
+
+
+#May	Weibull
+month = 5
+arr.dist.months[month] = "Weibull"
+arr.param01[month] = df.func.params$Weibull[df.func.params$month == month & df.func.params$parameter == 1]
+arr.param02[month] = df.func.params$Weibull[df.func.params$month == month & df.func.params$parameter == 2]
+
+
+#Jun	Weibull
+month = 6
+arr.dist.months[month] = "Weibull"
+arr.param01[month] = df.func.params$Weibull[df.func.params$month == month & df.func.params$parameter == 1]
+arr.param02[month] = df.func.params$Weibull[df.func.params$month == month & df.func.params$parameter == 2]
+
+
+#Jul	Logistic
+month = 7
+arr.dist.months[month] = "Logistic"
+arr.param01[month] = df.func.params$Logistic[df.func.params$month == month & df.func.params$parameter == 1]
+arr.param02[month] = df.func.params$Logistic[df.func.params$month == month & df.func.params$parameter == 2]
+
+
+#Aug	Weibull
+month = 8
+arr.dist.months[month] = "Weibull"
+arr.param01[month] = df.func.params$Weibull[df.func.params$month == month & df.func.params$parameter == 1]
+arr.param02[month] = df.func.params$Weibull[df.func.params$month == month & df.func.params$parameter == 2]
+
+#Sep	Normal
+month = 9
+arr.dist.months[month] = "Normal"
+arr.param01[month] = df.func.params$Normal[df.func.params$month == month & df.func.params$parameter == 1]
+arr.param02[month] = df.func.params$Normal[df.func.params$month == month & df.func.params$parameter == 2]
+
+#Oct	lognormal
+month = 10
+arr.dist.months[month] = "Log-Normal"
+arr.param01[month] = df.func.params$`Log-Normal`[df.func.params$month == month & df.func.params$parameter == 1]
+arr.param02[month] = df.func.params$`Log-Normal`[df.func.params$month == month & df.func.params$parameter == 2]
+
+#Nov	lognormal
+month = 11
+arr.dist.months[month] = "Log-Normal"
+arr.param01[month] = df.func.params$`Log-Normal`[df.func.params$month == month & df.func.params$parameter == 1]
+arr.param02[month] = df.func.params$`Log-Normal`[df.func.params$month == month & df.func.params$parameter == 2]
+
+#Dec	Normal
+month = 12
+arr.dist.months[month] = "Normal"
+arr.param01[month] = df.func.params$Normal[df.func.params$month == month & df.func.params$parameter == 1]
+arr.param02[month] = df.func.params$Normal[df.func.params$month == month & df.func.params$parameter == 2]
+
+#x_random <-runif(1000, 0.01, 0.99)
+#Lognormal quantiles function
+#y_qlnorm <- qlnorm(x_random, meanlog = arr.param01[1], sdlog = arr.param01[1], log = FALSE)  # Apply qlnorm function
+#y_qlnorm <- round(y_qlnorm, 0)
+
+#Normal quantiles function
+#y_qlnorm <- qnorm(x_random, mean=70,sd=3)
+#plot(y_qlnorm)  
+
+#Logistic quantile function
+#y_logis <- qlogis(x_random, location = 61.52141, scale = 1)
+#plot(y_logis) 
+
+#Weibull
+#y_qweibull <- qweibull(x_random, shape = 21.9115, scale = 62.45202)
+#plot(y_qweibull) 
+```
+
+
+```{r}
+
+GetSyntheticValues  <- function(month_function, month ,param01, param02, day){
+  if (month_function == "Log-Normal") {
+    synthetic.value <- qlnorm(runif(1, 0.01, 0.99), meanlog = param01, 
+                              sdlog = param02, log = FALSE)
+  }
+  
+  else if (month_function == "Logistic"){
+    synthetic.value <- qlogis(runif(1, 0.01, 0.99), location = param01, scale = param02)
+  }
+  
+  else if (month_function == "Normal"){
+    synthetic.value <- qnorm(runif(1, 0.01, 0.99), mean=param01, sd=param02)
+  }
+  
+  else if (month_function == "Weibull"){
+    synthetic.value <- qweibull(runif(1, 0.01, 0.99), shape = param01, scale = param02)
+  }
+  
+  else{
+   print(paste0("Function: ", month_function, " and month: ", month))
+    synthetic.value = day
+  }
+    
+  return(synthetic.value)
+};
+
+#
+df.enc.dwell.modif$dummy <- NA
+df.enc.dwell.modif$dummy <- ifelse(is.na(df.enc.dwell.modif$dummy), df.enc.dwell.modif$bill.days1.valid, df.enc.dwell.modif$dummy)
+
+n_bimonth_values = length(df.enc.dwell.modif$dummy[df.enc.dwell.modif$mes_inic1 == 1 & 
+                                                df.enc.dwell.modif$num_month_bill > 1.5 & 
+                                                df.enc.dwell.modif$num_month_bill <= 2.5])
+
+number_rows = nrow(df.enc.dwell.modif)
+x_random <-runif(number_rows, 0.01, 0.99)
+y_qlnorm <- qnorm(x_random, mean=70,sd=3)
+
+n_values <- 0
+
+summary(df.enc.dwell.modif$dummy)
+
+for (row in 1:nrow(df.enc.dwell.modif)) {
+    month <- df.enc.dwell.modif[row, "mes_inic1"]
+    days  <- df.enc.dwell.modif[row, "bill.days1.valid"]
+  
+    if(!is.na(month) & month >= 1 & is.na(days)) {
+      n_values = n_values + 1
+      df.enc.dwell.modif[row, "bill.days1.valid"] <- GetSyntheticValues(arr.dist.months[month], month,
+                                                        arr.param01[month], arr.param02[month], days);
+    }
+}
+print(paste0("# of rows: ",nrow(df.enc.dwell.modif)) )
+print(paste0("# of modified values: ", n_values))
+
+summary(df.enc.dwell.modif$bill.days1.valid)
+>>>>>>> 9248e48701899e5efeb71c4495281c9f2a84be4b
+```
+Jan lognormal
+Feb	Normal
+Mar	logistic
+Apr	logistic
+May	Weibull
+Jun	Weibull
+Jul	Logistic
+Aug	Weibull
+Sep	Normal
+Oct	lognormal
+Nov	lognormal
+Dec	Normal
+
+```{r}
+<<<<<<< HEAD
 arr.param01 <- array(0, dim=c(12,1))
 arr.param02 <- array(0, dim=c(12,1))
 arr.dist.months <- array(0, dim=c(12,1))
@@ -1175,6 +1810,167 @@ quantiles <- svyquantile(~bill.days1.valid, svd.dwell, c(.25,.5,.75),ci=TRUE, na
 freq(df.enc.dwell.modif$bill.period1, report.nas = TRUE, 
                        style = "rmarkdown",  
                        headings = FALSE, na.rm = TRUE)
+=======
+#df.enc.dwell.modif$bill.days1.valid <- df.enc.dwell.modif$dummy
+#df.enc.dwell.modif$dummy <- NULL
+
+df.enc.dwell.modif$bill.days1.valid <- round(df.enc.dwell.modif$bill.days1.valid, 0)
+
+descr(df.enc.dwell.modif$bill.days1.valid, 
+      stats = c("mean", "sd", "min", "med", "max", "n.valid", "pct.valid"), 
+     # weights = df.enc.dwell$factor_sem,       
+      transpose = TRUE)
+```
+
+```{r}
+freq(df.enc.dwell.modif$bill.days1.valid)
+```
+
+```{r plt-histbimonth-after, fig.cap="Histograms of bi-monthly bills", warning=FALSE, message=FALSE, results="hold"}
+
+CreateBimonthBillHistPlots<-function(month, legend){
+  #Ref: https://plotly.com/r/text-and-annotations/
+  sample_size = sum(complete.cases(df.enc.dwell.modif$bill.days1.valid[df.enc.dwell.modif$mes_inic1 == month & df.enc.dwell.modif$num_month_bill > 1.5 & df.enc.dwell.modif$num_month_bill <= 2.5 ]), na.rm = TRUE)
+  
+  f <- list(
+  family = "Courier New, monospace",
+  size = 18,
+  color = "#7f7f7f ")
+  
+  a <- list(
+    x = 68,
+    y = 0.5,
+    text = paste0("n=", sample_size),
+    xref = "x",
+    yref = "y",
+    showarrow = FALSE,
+    arrowhead = 7,
+    ax = 20,
+    ay = -40,
+    titlefont = f)
+  
+  x <- list(
+    title = "x Axis",
+    titlefont = f)
+  
+  y <- list(
+    title = "y Axis",
+    titlefont = f)
+
+
+  fit <- density(df.enc.dwell.modif$bill.days1.valid[df.enc.dwell.modif$mes_inic1 == month & df.enc.dwell.modif$num_month_bill > 1.5 & df.enc.dwell.modif$num_month_bill <= 2.5 ], na.rm = TRUE)
+  
+  myplt <- plot_ly(x = df.enc.dwell.modif$bill.days1.valid[df.enc.dwell.modif$mes_inic1 == month & df.enc.dwell.modif$num_month_bill > 1.5 & 
+                                            df.enc.dwell.modif$num_month_bill <= 2.5 ],
+               type = "histogram",
+               histnorm = "probability",
+               name = legend) %>%
+      #add_trace(x = fit$x, y = fit$y, yaxis = "y2", name = "Density") %>%
+    layout(title = 'Distribution of Days Billed Reported by ENCEVI (Bi-Monthly Bills) - After Data Recovery',
+           xaxis = list(title = "days", range = c(50, 70)), 
+           yaxis = list(title = "Probability"),
+           legend = list(title = "month"),
+           #yaxis2 = list(overlaying = "y", side = "right")
+           annotations = a
+           )
+  myplt
+}
+
+
+plotList <- function(seq_months) {
+    lapply(seq_len(length(seq_months)), function(x) CreateBimonthBillHistPlots(seq_months))
+}
+
+s1 <- subplot(CreateBimonthBillHistPlots(1, 'jan'), CreateBimonthBillHistPlots(2, 'feb'), 
+              CreateBimonthBillHistPlots(3, 'mar'), CreateBimonthBillHistPlots(4, 'apr'), 
+              nrows = 1, shareX = TRUE, shareY = TRUE)
+
+s2 <- subplot(CreateBimonthBillHistPlots(5, 'may'), CreateBimonthBillHistPlots(6, 'jun'), 
+              CreateBimonthBillHistPlots(7, 'jul'), CreateBimonthBillHistPlots(8, 'aug'),  
+              nrows = 1, shareX = TRUE, shareY = TRUE)
+
+s3 <- subplot(CreateBimonthBillHistPlots(9, 'sep'), CreateBimonthBillHistPlots(10, 'oct'), 
+              CreateBimonthBillHistPlots(11, 'nov'), CreateBimonthBillHistPlots(12, 'dec'),  
+              nrows = 1, shareX = TRUE, shareY = TRUE)
+
+f <- list(
+  family = "Courier New, monospace",
+  size = 18,
+  color = "#7f7f7f ")
+  
+x <- list(
+  title = "x Axis",
+  titlefont = f)
+
+y <- list(
+  title = "y Axis",
+  titlefont = f)
+
+fig <- subplot(s1, s2, s3, nrows = 3, margin = 0.04, heights = c(0.33, 0.33, 0.34)) 
+fig
+
+plotly_IMAGE(fig, format = "png", 
+             out_file = "./output/fig/hist_bill_period_per_month_bimonthly_after.png")
+```
+**Save Dataset with data recovered**
+```{r}
+df.enc.dwell.modif <- subset (df.enc.dwell.modif, 
+                             select = -c(dummy, final.y, mes_final.y, inicia.y, 
+                                          mes_inic.y, final.x, mes_final.x, 
+                                          inicia.x, mes_inic.x))
+
+df.enc.dwell.modif$bill.period1 <- NULL
+df.enc.dwell.modif$bill.period1[df.enc.dwell$num_month_bill > 0.95 & df.enc.dwell$num_month_bill <= 1.5] <- 1
+df.enc.dwell.modif$bill.period1[df.enc.dwell$num_month_bill > 1.5 & df.enc.dwell$num_month_bill <= 2.5] <- 2
+
+df.enc.dwell.modif$bill.period1 <- factor(df.enc.dwell.modif$bill.period1,
+                               levels = c(1, 2),
+                               labels = c("monthly", "bi-monthly"))
+```
+
+
+```{r tbl-bill1-days, fig.cap=table_captions("tbl_bill1_days", "Days included in electricity  bill"), results="hold"}
+tb.stat.bill.days1 <- descr(df.enc.dwell.modif[ ,c("bill.days1", "bill.days1.valid")], 
+                         weights = df.enc.dwell.modif$factor_sem,
+                         round.digits = 2,
+                         style = "rmarkdown",  transpose = TRUE, 
+                         stats = c("mean", "med", "sd", "min", "max", 
+                                   "n.valid", "pct.valid"),
+                         headings = TRUE)
+
+tb.stat.bill.days1 <- as.data.frame(tb.stat.bill.days1)
+
+knitr::kable(tb.stat.bill.days1, 
+      label = 'table-bill1-days', digits = 2, align = 'l', booktabs = TRUE,
+  caption = paste(t.ref("tbl_bill1_days"),'Days included in electricity  bill')) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", 
+                                      "condensed", "responsive"),
+                fixed_thead = T, full_width = F)
+
+tb.stat.bill.days1$percent.valid <-tb.stat.bill.days1$`% Valid`
+```
+
+*The Federal Electricity Commission (CFE) bills their residential customers every month or every two months.* The period of time between bills for monthly accounts is between 27-35 days and the period between bills for bi-monthly accounts is between 56-65 days. Bills that are outside these ranges usually include special fees (i.e late fees, installation fees, etc) or were issued incorrectly. So, in this analysis we discarded the information from bills outside these ranges. Based on this rule, we found that only `r format(tb.stat.bill.days1['bill.days1.valid', 'N.Valid'], big.mark=",")` households represented by the survey (`r round(tb.stat.bill.days1['bill.days1.valid', 'percent.valid'], 2)`%) can be considered as records (See `r t.ref("tbl_bill1_days")`).
+
+
+```{r, eval=FALSE, results="asis"}
+options( survey.lonely.psu = "adjust" )
+
+svd.dwell <- svydesign(id=~upm, strata=~est_dis, 
+                 data=df.enc.dwell.modif, weights=~factor_sem)
+
+## Estimating average billed days
+mean <- svymean(~bill.days1.valid, svd.dwell, na.rm=TRUE)
+variance <- svyvar(~bill.days1.valid, svd.dwell, na.rm=TRUE)
+
+quantiles <- svyquantile(~bill.days1.valid, svd.dwell, c(.25,.5,.75),ci=TRUE, na.rm=TRUE)
+```
+
+**Monthly or Bi-mothly Periodicity**
+```{r}
+freq(df.enc.dwell.modif$bill.period1, report.nas = TRUE, 
+                       style = "rmarkdown",  
+                       headings = FALSE, na.rm = TRUE)
 ```
 
 
@@ -1207,7 +2003,53 @@ write.csv(tb.bill.period,"./output/tables/tb.bill.period.csv", row.names = FALSE
 ```{r}
 file.path <- paste0("./output/df_dwelling_recover.csv")
 write.csv(df.enc.dwell.modif, file.path, row.names = TRUE, na="")
+>>>>>>> 9248e48701899e5efeb71c4495281c9f2a84be4b
 ```
+
+
+
+<<<<<<< HEAD
+```{r}
+tb.bill.period <- freq(df.enc.dwell.modif$bill.period1, report.nas = TRUE, 
+                       style = "rmarkdown", weights = df.enc.dwell.modif$factor_sem, 
+                       headings = FALSE, na.rm = TRUE)
+
+tb.bill.period <- as.data.frame(tb.bill.period)
+tb.bill.period$percent.valid <-tb.bill.period$`% Total`
+```
+
+
+As shown in the `r t.ref("tbl_bill1_period")` most o the households represented by ENCEVI have bi-monthly bills (`r round (tb.bill.period['bi-monthly','percent.valid'], 2)`%).
+
+```{r tbl-bill1-period, fig.cap=table_captions("tbl_bill1_period", "Billing periodicity")}
+#https://stackoverflow.com/questions/38861041/knitr-rmarkdown-latex-how-to-cross-reference-figures-and-tables
+kable(tb.bill.period, label = 'table-bill1-period', digits = 3,
+      align = 'r', booktabs = TRUE, full_width = FALSE,
+  caption = paste(t.ref("tbl_bill1_period"), 'Billing periodicity (first bill)')) %>%
+  kable_styling(bootstrap_options = c("striped", "hover",
+                                      "condensed", "responsive"),
+                fixed_thead = TRUE)
+
+write.csv(tb.bill.period,"./output/tables/tb.bill.period.csv", row.names = FALSE)
+```
+
+### Store Results
+```{r}
+file.path <- paste0("./output/df_dwelling_recover.csv")
+write.csv(df.enc.dwell.modif, file.path, row.names = TRUE, na="")
+```
+=======
+
+
+
+
+
+
+
+
+
+
+>>>>>>> 9248e48701899e5efeb71c4495281c9f2a84be4b
 
 
 

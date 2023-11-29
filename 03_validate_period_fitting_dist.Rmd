@@ -24,9 +24,15 @@ rm(list=ls())
 gc()
 
 source("./script/general_setup_functions.R")
+<<<<<<< HEAD
 
 ```
 
+=======
+```
+
+
+>>>>>>> 9248e48701899e5efeb71c4495281c9f2a84be4b
 ```{r knitr_init, include=FALSE}
 #options(max.print = "75")
 opts_chunk$set(echo = TRUE,
@@ -62,6 +68,7 @@ knitr::knit_hooks$set(output = function(x, options){
 
 
 ```{r}
+<<<<<<< HEAD
 #Read data
 df_encevi <- read.csv("./output/encevi_db_clean_041722.csv", encoding="UTF-8",
                            header = TRUE, na.strings=NA)
@@ -214,4 +221,12 @@ mape <- function (y, pred){
 test$new_days2 <- 61 
 rmse(test$bill_days_raw, test$new_days2)
 mape(test$bill_days_raw, test$new_days2)
+=======
+df_encevi_hh <- read.csv("./output/df_bill_wconsump.csv", 
+                           header = TRUE, na.strings="")
+df_encevi_hh <- df_encevi_hh %>%
+  rename(folioviv = ï..folio)
+
+head(df_encevi_hh)
+>>>>>>> 9248e48701899e5efeb71c4495281c9f2a84be4b
 ```
